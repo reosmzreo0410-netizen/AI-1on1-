@@ -1,15 +1,26 @@
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let openaiInstance: OpenAI | null = null;
 
-export const getModel = () => process.env.OPENAI_MODEL || 'gpt-4';
+function getOpenAI(): OpenAI {
+  if (!openaiInstance) {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY environment variable is not set');
+    }
+    openaiInstance = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return openaiInstance;
+}
+
+export const getModel = () => process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
 export async function streamChat(
   messages: OpenAI.Chat.ChatCompletionMessageParam[],
   onChunk: (chunk: string) => void
 ): Promise<string> {
+  const openai = getOpenAI();
   const stream = await openai.chat.completions.create({
     model: getModel(),
     messages,
@@ -30,6 +41,7 @@ export async function streamChat(
 export async function generateCompletion(
   messages: OpenAI.Chat.ChatCompletionMessageParam[]
 ): Promise<string> {
+  const openai = getOpenAI();
   const response = await openai.chat.completions.create({
     model: getModel(),
     messages,
@@ -37,4 +49,4 @@ export async function generateCompletion(
   return response.choices[0]?.message?.content || '';
 }
 
-export default openai;
+export { getOpenAI };
