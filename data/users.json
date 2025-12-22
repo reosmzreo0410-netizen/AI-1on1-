@@ -1,0 +1,39 @@
+{
+  "users": [
+    {
+      "id": "admin",
+      "name": "管理者（経営陣）",
+      "role": "admin"
+    },
+    {
+      "id": "yamada",
+      "name": "山田太郎",
+      "role": "admin"
+    },
+    {
+      "id": "sato",
+      "name": "佐藤花子",
+      "role": "user"
+    },
+    {
+      "id": "suzuki",
+      "name": "鈴木一郎",
+      "role": "user"
+    },
+    {
+      "id": "tanaka",
+      "name": "田中美咲",
+      "role": "user"
+    },
+    {
+      "id": "takahashi",
+      "name": "高橋健太",
+      "role": "user"
+    },
+    {
+      "id": "ito",
+      "name": "伊藤さくら",
+      "role": "user"
+    }
+  ]
+}

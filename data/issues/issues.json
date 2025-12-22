@@ -1,0 +1,267 @@
+{
+  "lastUpdated": "2024-12-18T20:00:00.000Z",
+  "issues": [
+    {
+      "id": "issue_001",
+      "title": "トークスクリプト・営業マニュアルの未整備",
+      "category": "tools",
+      "severity": "high",
+      "frequency": 5,
+      "reportedBy": ["suzuki", "takahashi", "yamada", "sato", "tanaka"],
+      "firstReported": "2024-12-16",
+      "lastReported": "2024-12-18",
+      "description": "営業トークスクリプトや商談マニュアルが整備されておらず、各自が手探りで商談を行っている。成約率の差につながっている主要因の一つ。",
+      "quotes": [
+        "トークスクリプトがないので、毎回手探りで話しています",
+        "自分の成功パターンを言語化してマニュアル化したいのですが、そんな時間が取れません",
+        "トークスクリプトや営業マニュアルの整備時間がほしい"
+      ],
+      "status": "open",
+      "priority": 1
+    },
+    {
+      "id": "issue_002",
+      "title": "新人研修プログラム・メンター制度の不在",
+      "category": "process",
+      "severity": "high",
+      "frequency": 4,
+      "reportedBy": ["takahashi", "yamada", "suzuki", "sato"],
+      "firstReported": "2024-12-16",
+      "lastReported": "2024-12-18",
+      "description": "新人向けの体系的な研修プログラムやメンター制度がなく、OJTに頼っている。先輩の商談同席機会も限られている。",
+      "quotes": [
+        "研修資料みたいなものがなくて困っています",
+        "OJTで学べとは言われるのですが、先輩の商談に同席する機会もあまりなく",
+        "新人向けの研修プログラムとか、メンター制度があるといいなと思います",
+        "研修プログラムを作りたいが、自分も商談を持っているので手が回らない"
+      ],
+      "status": "open",
+      "priority": 2
+    },
+    {
+      "id": "issue_003",
+      "title": "ナレッジ共有の仕組み・時間の不足",
+      "category": "communication",
+      "severity": "high",
+      "frequency": 5,
+      "reportedBy": ["sato", "suzuki", "takahashi", "yamada", "ito"],
+      "firstReported": "2024-12-16",
+      "lastReported": "2024-12-18",
+      "description": "成功事例やノウハウを共有する仕組みがなく、トップパフォーマーの知見が横展開されていない。皆忙しく相談する時間も取れない状況。",
+      "quotes": [
+        "佐藤さんに聞きたいのですが、忙しそうで声をかけにくいです",
+        "もっとチーム全体で成功事例を共有する場があるといいなと思います",
+        "佐藤のノウハウを横展開したいが、佐藤も忙しくて時間が取れない",
+        "週1でもいいのでナレッジ共有会みたいなものがあると良いかもしれません"
+      ],
+      "status": "open",
+      "priority": 1
+    },
+    {
+      "id": "issue_004",
+      "title": "クロージングスキルの格差",
+      "category": "skills",
+      "severity": "medium",
+      "frequency": 4,
+      "reportedBy": ["suzuki", "takahashi", "yamada", "tanaka"],
+      "firstReported": "2024-12-16",
+      "lastReported": "2024-12-18",
+      "description": "クロージングの方法がわからず苦戦しているメンバーが複数いる。お客様の迷いに対してどう対応すべきか悩んでいる。",
+      "quotes": [
+        "クロージングが本当に苦手です。お客様が迷っている時に、どう背中を押せばいいかわからない",
+        "最後のクロージングで何を言えばいいかわからず、「検討します」で終わってしまいました",
+        "鈴木さんとの1on1でクロージングの悩みを聞けた"
+      ],
+      "status": "open",
+      "priority": 2
+    },
+    {
+      "id": "issue_005",
+      "title": "成約率によるメンバー間の格差・溝",
+      "category": "communication",
+      "severity": "medium",
+      "frequency": 4,
+      "reportedBy": ["yamada", "sato", "suzuki", "ito"],
+      "firstReported": "2024-12-16",
+      "lastReported": "2024-12-18",
+      "description": "成約率60%超のトップパフォーマーと20-30%台のメンバーとの間に大きな差があり、チーム内に溝ができつつある。",
+      "quotes": [
+        "成約率の差が大きくて、できる人とできない人の間に溝ができている気がします",
+        "佐藤: 60%超、鈴木・高橋: 20-30%台",
+        "佐藤さんとの差が開く一方で、焦りを感じています"
+      ],
+      "status": "open",
+      "priority": 3
+    },
+    {
+      "id": "issue_006",
+      "title": "マネージャーの育成時間確保困難",
+      "category": "workload",
+      "severity": "high",
+      "frequency": 2,
+      "reportedBy": ["yamada", "sato"],
+      "firstReported": "2024-12-16",
+      "lastReported": "2024-12-18",
+      "description": "マネージャーも自身の商談を持っており、メンバー育成やマニュアル整備に時間を割けない状態が続いている。",
+      "quotes": [
+        "メンバーへの具体的なアドバイスをする時間がない",
+        "研修プログラムを作りたいが、自分も商談を持っているので手が回らない",
+        "人員増加、またはマネージャーの商談件数削減で育成時間を確保したい"
+      ],
+      "status": "open",
+      "priority": 2
+    },
+    {
+      "id": "issue_007",
+      "title": "評価制度・キャリアパスの不明確さ",
+      "category": "process",
+      "severity": "medium",
+      "frequency": 3,
+      "reportedBy": ["tanaka", "suzuki", "ito"],
+      "firstReported": "2024-12-16",
+      "lastReported": "2024-12-17",
+      "description": "評価基準やキャリアパスが明確でなく、モチベーション低下につながっている。数字以外の貢献が評価されにくい。",
+      "quotes": [
+        "評価制度をもっと明確にしてほしい",
+        "昇給条件やリーダー昇格の基準を明示してほしい",
+        "成績（数字）だけでなく、新人フォローやチーム貢献も評価してほしい",
+        "正直、成約率の数字だけで評価されるのがプレッシャーです"
+      ],
+      "status": "open",
+      "priority": 3
+    },
+    {
+      "id": "issue_008",
+      "title": "リモートワークによるコミュニケーション不足・孤独感",
+      "category": "communication",
+      "severity": "medium",
+      "frequency": 2,
+      "reportedBy": ["ito", "takahashi"],
+      "firstReported": "2024-12-16",
+      "lastReported": "2024-12-17",
+      "description": "リモートワーク増加により、チームメンバーとのコミュニケーション機会が減少。孤独感を感じたり、気軽に相談できない状況が生まれている。",
+      "quotes": [
+        "チーム内でのコミュニケーションが減っている",
+        "孤独感を感じることがある",
+        "リモートワーク増加でチームメンバーと話す機会が減った",
+        "Slackは業務連絡だけで終わってしまう",
+        "成績不振時に相談する相手がいない、一人で抱え込んでしまう"
+      ],
+      "status": "open",
+      "priority": 3
+    },
+    {
+      "id": "issue_009",
+      "title": "新規顧客との信頼構築の難しさ",
+      "category": "skills",
+      "severity": "medium",
+      "frequency": 2,
+      "reportedBy": ["ito", "takahashi"],
+      "firstReported": "2024-12-16",
+      "lastReported": "2024-12-17",
+      "description": "紹介案件と比較して、新規顧客との信頼構築に苦戦している。初対面での警戒心を解くスキルが必要。",
+      "quotes": [
+        "新規のお客様との信頼構築が難しい",
+        "新規だと警戒されることが多い",
+        "紹介のお客様は信頼関係ができており、スムーズに成約"
+      ],
+      "status": "open",
+      "priority": 4
+    },
+    {
+      "id": "issue_010",
+      "title": "メンタル・モチベーション管理",
+      "category": "skills",
+      "severity": "medium",
+      "frequency": 3,
+      "reportedBy": ["suzuki", "tanaka", "ito"],
+      "firstReported": "2024-12-16",
+      "lastReported": "2024-12-17",
+      "description": "断られた時のメンタルダメージや、マンネリ化によるモチベーション低下が見られる。",
+      "quotes": [
+        "断られるとすごく落ち込んでしまって、次の商談に影響が出てしまいます",
+        "マンネリ化してきてモチベーションが上がらない",
+        "入社1年半で成果は出せているが、このまま続けていいか不安"
+      ],
+      "status": "open",
+      "priority": 4
+    }
+  ],
+  "categorySummary": {
+    "tools": {
+      "count": 1,
+      "label": "ツール・マニュアル",
+      "issues": ["issue_001"]
+    },
+    "process": {
+      "count": 2,
+      "label": "プロセス・制度",
+      "issues": ["issue_002", "issue_007"]
+    },
+    "communication": {
+      "count": 3,
+      "label": "コミュニケーション",
+      "issues": ["issue_003", "issue_005", "issue_008"]
+    },
+    "skills": {
+      "count": 3,
+      "label": "スキル・能力",
+      "issues": ["issue_004", "issue_009", "issue_010"]
+    },
+    "workload": {
+      "count": 1,
+      "label": "業務量",
+      "issues": ["issue_006"]
+    }
+  },
+  "priorityRanking": [
+    {
+      "rank": 1,
+      "issueId": "issue_001",
+      "title": "トークスクリプト・営業マニュアルの未整備",
+      "reason": "5名が言及、成約率格差の根本原因"
+    },
+    {
+      "rank": 2,
+      "issueId": "issue_003",
+      "title": "ナレッジ共有の仕組み・時間の不足",
+      "reason": "5名が言及、組織力向上のボトルネック"
+    },
+    {
+      "rank": 3,
+      "issueId": "issue_002",
+      "title": "新人研修プログラム・メンター制度の不在",
+      "reason": "4名が言及、新人の立ち上がりに影響"
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "rec_001",
+      "title": "トークスクリプト整備プロジェクトの立ち上げ",
+      "relatedIssues": ["issue_001", "issue_004"],
+      "description": "佐藤さんの成功パターンを言語化し、チーム共通のトークスクリプトを作成する。マネージャーの商談を一時的に減らし、整備時間を確保することを推奨。",
+      "priority": "high"
+    },
+    {
+      "id": "rec_002",
+      "title": "週次ナレッジ共有会の設置",
+      "relatedIssues": ["issue_003", "issue_005", "issue_008"],
+      "description": "週1回30分程度の成功事例共有会を設置。リモートでも参加できる形式で、チームコミュニケーションの機会も兼ねる。",
+      "priority": "high"
+    },
+    {
+      "id": "rec_003",
+      "title": "新人オンボーディングプログラムの構築",
+      "relatedIssues": ["issue_002", "issue_004"],
+      "description": "入社後3ヶ月の研修プログラムとメンター制度を設計。先輩商談への同席機会を定期的に設ける。",
+      "priority": "medium"
+    },
+    {
+      "id": "rec_004",
+      "title": "評価制度の見直し・キャリアパスの明確化",
+      "relatedIssues": ["issue_007", "issue_010"],
+      "description": "成約率だけでなく、新人フォローやナレッジ共有への貢献も評価に加える。昇格基準を明文化し、キャリアパスを提示する。",
+      "priority": "medium"
+    }
+  ]
+}
