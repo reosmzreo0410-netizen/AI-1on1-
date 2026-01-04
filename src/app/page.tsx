@@ -6,40 +6,47 @@ import { User } from '@/types';
 
 export default function HomePage() {
   const router = useRouter();
-  const [users, setUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [inputId, setInputId] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
     const init = async () => {
-      // 現在のユーザーを確認
       const authRes = await fetch('/api/auth');
       const authData = await authRes.json();
       if (authData.data) {
         setCurrentUser(authData.data);
       }
-
-      // ユーザー一覧を取得
-      const usersRes = await fetch('/api/auth?action=list', { method: 'PUT' });
-      const usersData = await usersRes.json();
-      if (usersData.data) {
-        setUsers(usersData.data);
-      }
-
       setLoading(false);
     };
     init();
   }, []);
 
-  const handleLogin = async (userId: string) => {
+  const handleIdLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputId.trim()) {
+      setLoginError('IDを入力してください');
+      return;
+    }
+
+    setIsLoggingIn(true);
+    setLoginError('');
+
     const res = await fetch('/api/auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId }),
+      body: JSON.stringify({ userId: inputId.trim() }),
     });
     const data = await res.json();
+
     if (data.success) {
       router.refresh();
+      window.location.reload();
+    } else {
+      setLoginError('IDが見つかりません');
+      setIsLoggingIn(false);
     }
   };
 
@@ -57,7 +64,7 @@ export default function HomePage() {
       <div className="max-w-4xl mx-auto py-12 px-4">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-800 mb-4">
-            AI 1on1 ツール
+            AI 1on1 コーチング
           </h1>
           <p className="text-xl text-gray-600">
             ようこそ、{currentUser.name}さん
@@ -73,7 +80,7 @@ export default function HomePage() {
               1on1を始める
             </h2>
             <p className="text-gray-600">
-              AIと1on1を行い、今日の業務内容や課題を共有しましょう。
+              AIコーチと1on1を行い、今日の振り返りや目標について対話しましょう。
             </p>
           </a>
 
@@ -107,7 +114,7 @@ export default function HomePage() {
               >
                 <h2 className="text-2xl font-bold text-gray-800 mb-3">設定</h2>
                 <p className="text-gray-600">
-                  1on1の質問項目やユーザーを管理します。
+                  質問項目やメンバーを管理します。
                 </p>
               </a>
             </>
@@ -124,32 +131,38 @@ export default function HomePage() {
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">
-              AI 1on1 ツール
+              AI 1on1 コーチング
             </h1>
-            <p className="text-gray-600">ユーザーを選択してログイン</p>
+            <p className="text-gray-600">あなたのIDを入力してください</p>
           </div>
 
-          <div className="space-y-3">
-            {users.map((user) => (
-              <button
-                key={user.id}
-                onClick={() => handleLogin(user.id)}
-                className="w-full p-4 text-left bg-gray-50 hover:bg-blue-50 rounded-lg border border-gray-200 hover:border-blue-300 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-gray-800">{user.name}</div>
-                    <div className="text-sm text-gray-500">ID: {user.id}</div>
-                  </div>
-                  {user.role === 'admin' && (
-                    <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
-                      管理者
-                    </span>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
+          <form onSubmit={handleIdLogin} className="space-y-4">
+            <div>
+              <input
+                type="text"
+                value={inputId}
+                onChange={(e) => {
+                  setInputId(e.target.value);
+                  setLoginError('');
+                }}
+                placeholder="あなたのID"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                disabled={isLoggingIn}
+              />
+            </div>
+
+            {loginError && (
+              <p className="text-red-500 text-sm text-center">{loginError}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={isLoggingIn}
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoggingIn ? 'ログイン中...' : 'ログイン'}
+            </button>
+          </form>
         </div>
       </div>
     </div>

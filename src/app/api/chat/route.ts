@@ -5,9 +5,13 @@ import { getSettings, saveConversation, getConversation } from '@/lib/storage';
 import { getSystemPrompt } from '@/lib/prompts';
 import { Conversation, ChatMessage } from '@/types';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+function getOpenAI(): OpenAI {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error('OPENAI_API_KEY is not set');
+  }
+  return new OpenAI({ apiKey });
+}
 
 // 会話開始
 export async function POST(request: NextRequest) {
@@ -49,8 +53,9 @@ export async function POST(request: NextRequest) {
         { role: 'system', content: systemPrompt },
       ];
 
+      const openai = getOpenAI();
       const response = await openai.chat.completions.create({
-        model: process.env.OPENAI_MODEL || 'gpt-4',
+        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
         messages: aiMessages,
       });
 
@@ -105,8 +110,9 @@ export async function POST(request: NextRequest) {
           content: m.content,
         }));
 
+      const openai = getOpenAI();
       const response = await openai.chat.completions.create({
-        model: process.env.OPENAI_MODEL || 'gpt-4',
+        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
         messages: aiMessages,
       });
 
@@ -172,8 +178,15 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('Chat error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'チャットエラーが発生しました';
+    if (errorMessage.includes('OPENAI_API_KEY')) {
+      return NextResponse.json(
+        { success: false, error: '.env.local ファイルで OPENAI_API_KEY を設定してください' },
+        { status: 500 }
+      );
+    }
     return NextResponse.json(
-      { success: false, error: 'チャットエラーが発生しました' },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }

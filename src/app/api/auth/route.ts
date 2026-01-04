@@ -95,6 +95,22 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: true, data: newUser });
     }
 
+    if (action === 'delete') {
+      const { userId } = await request.json();
+      const users = await getUsers();
+      const filteredUsers = users.filter((u) => u.id !== userId);
+
+      if (filteredUsers.length === users.length) {
+        return NextResponse.json(
+          { success: false, error: 'ユーザーが見つかりません' },
+          { status: 404 }
+        );
+      }
+
+      await saveUsers(filteredUsers);
+      return NextResponse.json({ success: true });
+    }
+
     return NextResponse.json(
       { success: false, error: '不明なアクションです' },
       { status: 400 }

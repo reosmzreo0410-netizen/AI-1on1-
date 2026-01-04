@@ -6,33 +6,43 @@
       "role": "admin"
     },
     {
-      "id": "yamada",
-      "name": "山田太郎",
-      "role": "admin"
-    },
-    {
-      "id": "sato",
-      "name": "佐藤花子",
+      "id": "momo",
+      "name": "澁谷桃子",
       "role": "user"
     },
     {
-      "id": "suzuki",
-      "name": "鈴木一郎",
+      "id": "meitan",
+      "name": "めい",
       "role": "user"
     },
     {
-      "id": "tanaka",
-      "name": "田中美咲",
+      "id": "1000mantameru",
+      "name": "たつみ",
       "role": "user"
     },
     {
-      "id": "takahashi",
-      "name": "高橋健太",
+      "id": "musashiman",
+      "name": "武蔵",
       "role": "user"
     },
     {
-      "id": "ito",
-      "name": "伊藤さくら",
+      "id": "ukiuki",
+      "name": "うき",
+      "role": "user"
+    },
+    {
+      "id": "rika_world",
+      "name": "りか",
+      "role": "user"
+    },
+    {
+      "id": "muscle",
+      "name": "たける",
+      "role": "user"
+    },
+    {
+      "id": "shun_nishioka",
+      "name": "しゅん兄",
       "role": "user"
     }
   ]
