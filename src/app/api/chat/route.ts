@@ -170,6 +170,17 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // プロバイダーが利用できない場合
+    if (errorMessage.includes('No AI providers available')) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'AIプロバイダーのAPIキーが設定されていません。OPENAI_API_KEY、GEMINI_API_KEY、ANTHROPIC_API_KEYのいずれかをVercelの環境変数に設定してください。' 
+        },
+        { status: 500 }
+      );
+    }
+    
     // APIキーが設定されていない場合
     if (errorMessage.includes('API key is not set') || errorMessage.includes('API_KEY')) {
       return NextResponse.json(

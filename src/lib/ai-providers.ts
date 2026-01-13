@@ -220,25 +220,51 @@ export async function chatCompletion(
 ): Promise<ChatCompletionResult> {
   const providers = getProviderPriority();
   const errors: Array<{ provider: AIProvider; error: Error }> = [];
+  const availableProviders: AIProvider[] = [];
 
+  // 利用可能なプロバイダーを確認
   for (const provider of providers) {
+    switch (provider) {
+      case 'openai':
+        if (getOpenAIClient()) {
+          availableProviders.push('openai');
+        }
+        break;
+      case 'gemini':
+        if (getGeminiClient()) {
+          availableProviders.push('gemini');
+        }
+        break;
+      case 'claude':
+        if (getClaudeClient()) {
+          availableProviders.push('claude');
+        }
+        break;
+    }
+  }
+
+  // 利用可能なプロバイダーがない場合
+  if (availableProviders.length === 0) {
+    const missingKeys: string[] = [];
+    if (!process.env.OPENAI_API_KEY) missingKeys.push('OPENAI_API_KEY');
+    if (!process.env.GEMINI_API_KEY) missingKeys.push('GEMINI_API_KEY');
+    if (!process.env.ANTHROPIC_API_KEY) missingKeys.push('ANTHROPIC_API_KEY');
+    
+    throw new Error(
+      `No AI providers available. Please set at least one of the following environment variables: ${missingKeys.join(', ')}`
+    );
+  }
+
+  // 利用可能なプロバイダーで試行
+  for (const provider of availableProviders) {
     try {
       switch (provider) {
         case 'openai':
-          if (getOpenAIClient()) {
-            return await chatWithOpenAI(messages, options);
-          }
-          break;
+          return await chatWithOpenAI(messages, options);
         case 'gemini':
-          if (getGeminiClient()) {
-            return await chatWithGemini(messages, options);
-          }
-          break;
+          return await chatWithGemini(messages, options);
         case 'claude':
-          if (getClaudeClient()) {
-            return await chatWithClaude(messages, options);
-          }
-          break;
+          return await chatWithClaude(messages, options);
       }
     } catch (error: any) {
       errors.push({ provider, error });
@@ -249,14 +275,20 @@ export async function chatCompletion(
         continue;
       }
       
-      // レート制限以外のエラーは即座にスロー
-      throw error;
+      // レート制限以外のエラーも次のプロバイダーを試す（より堅牢に）
+      console.warn(`Error with ${provider}: ${error.message}, trying next provider...`);
+      continue;
     }
   }
 
   // すべてのプロバイダーが失敗した場合
-  const errorMessages = errors.map(e => `${e.provider}: ${e.error.message}`).join('; ');
-  throw new Error(`All AI providers failed. Errors: ${errorMessages}`);
+  if (errors.length > 0) {
+    const errorMessages = errors.map(e => `${e.provider}: ${e.error.message}`).join('; ');
+    throw new Error(`All AI providers failed. Errors: ${errorMessages}`);
+  }
+  
+  // このケースは通常発生しないが、念のため
+  throw new Error('No AI providers available or all providers failed');
 }
 
 // 利用可能なプロバイダーを取得
