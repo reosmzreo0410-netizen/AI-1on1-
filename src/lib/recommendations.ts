@@ -143,7 +143,9 @@ async function searchYouTube(query: string): Promise<Recommendation[]> {
 async function searchWeb(query: string): Promise<Recommendation[]> {
   if (!GOOGLE_API_KEY || !GOOGLE_CSE_ID) return [];
   
-  const optimizedQuery = query + ' site:jp OR site:com';
+  // note記事も含めて検索（note.ioを含める）
+  // 課題解決に焦点を当てたクエリに最適化
+  const optimizedQuery = `${query} (解決方法 OR 対処法 OR 改善方法 OR ベストプラクティス) (site:note.com OR site:note.mu OR site:jp OR site:com)`;
   
   const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CSE_ID}&q=${encodeURIComponent(
     optimizedQuery
@@ -161,14 +163,22 @@ async function searchWeb(query: string): Promise<Recommendation[]> {
   const data = await fetchJson<WebResponse>(url);
   if (!data?.items) return [];
 
-  return data.items.map((item, idx) => ({
-    id: `web_${idx}_${Date.now()}`,
-    title: item.title || '記事',
-    url: item.link || '',
-    source: 'article' as const,
-    description: item.snippet ? item.snippet.slice(0, 200) + '...' : undefined,
-    reason: '課題解決に役立つ記事をウェブ検索から取得しました。',
-  }));
+  return data.items.map((item, idx) => {
+    // note記事かどうかを判定
+    const isNote = item.link?.includes('note.com') || item.link?.includes('note.mu');
+    const displayLink = item.displayLink || '';
+    
+    return {
+      id: `web_${idx}_${Date.now()}`,
+      title: item.title || '記事',
+      url: item.link || '',
+      source: 'article' as const,
+      description: item.snippet ? item.snippet.slice(0, 200) + '...' : undefined,
+      reason: isNote 
+        ? '課題解決に役立つnote記事を検索から取得しました。'
+        : '課題解決に役立つウェブ記事を検索から取得しました。',
+    };
+  });
 }
 
 async function searchBooks(query: string): Promise<Recommendation[]> {
@@ -332,12 +342,16 @@ async function evaluateAndSelectRecommendations(
     
     if (parsed.selected && Array.isArray(parsed.selected)) {
       const selected = parsed.selected
-        .map((s: { index: number; reason: string }) => {
+        .map((s: { index: number; reason: string; targetIssue?: string }) => {
           const candidate = candidates[s.index - 1];
           if (!candidate) return null;
+          // targetIssueが指定されている場合は、reasonに含める
+          const reason = s.targetIssue 
+            ? `【解決する課題】${s.targetIssue}\n${s.reason || candidate.reason}`
+            : (s.reason || candidate.reason);
           return {
             ...candidate,
-            reason: s.reason || candidate.reason,
+            reason,
           };
         })
         .filter(Boolean) as Recommendation[];
@@ -435,7 +449,7 @@ export async function generateRecommendations(params: {
     // AIで評価して最適な5つを選ぶ
     const selected = await evaluateAndSelectRecommendations(
       params.reportContent,
-      normalizedIssues.map(i => ({ content: i.content })),
+      normalizedIssues,
       unique
     );
 
