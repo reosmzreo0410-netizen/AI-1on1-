@@ -161,10 +161,22 @@ export async function POST(request: NextRequest) {
     
     // すべてのプロバイダーが失敗した場合
     if (errorMessage.includes('All AI providers failed')) {
+      // デバッグ情報をログに出力
+      console.error('All AI Providers Failed:', {
+        errorMessage,
+        fullError: error,
+        envCheck: {
+          OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
+          GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
+          ANTHROPIC_API_KEY: !!process.env.ANTHROPIC_API_KEY,
+        },
+        nodeEnv: process.env.NODE_ENV,
+      });
+      
       return NextResponse.json(
         { 
           success: false, 
-          error: 'すべてのAIプロバイダーでエラーが発生しました。環境変数を確認してください（OPENAI_API_KEY、GEMINI_API_KEY、ANTHROPIC_API_KEYのいずれかが必要です）。' 
+          error: 'すべてのAIプロバイダーでエラーが発生しました。Vercelのログを確認してください。環境変数（OPENAI_API_KEY、GEMINI_API_KEY、ANTHROPIC_API_KEY）が正しく設定されているか、また「All Environments」に設定されているか確認してください。' 
         },
         { status: 500 }
       );
@@ -172,10 +184,21 @@ export async function POST(request: NextRequest) {
     
     // プロバイダーが利用できない場合
     if (errorMessage.includes('No AI providers available')) {
+      // デバッグ情報をログに出力
+      console.error('AI Provider Error Details:', {
+        errorMessage,
+        envCheck: {
+          OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
+          GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
+          ANTHROPIC_API_KEY: !!process.env.ANTHROPIC_API_KEY,
+        },
+        nodeEnv: process.env.NODE_ENV,
+      });
+      
       return NextResponse.json(
         { 
           success: false, 
-          error: 'AIプロバイダーのAPIキーが設定されていません。OPENAI_API_KEY、GEMINI_API_KEY、ANTHROPIC_API_KEYのいずれかをVercelの環境変数に設定してください。' 
+          error: 'AIプロバイダーのAPIキーが設定されていません。OPENAI_API_KEY、GEMINI_API_KEY、ANTHROPIC_API_KEYのいずれかをVercelの環境変数に設定してください。環境変数を設定した後は、必ず新しいデプロイを実行してください。' 
         },
         { status: 500 }
       );

@@ -246,9 +246,23 @@ export async function chatCompletion(
   // 利用可能なプロバイダーがない場合
   if (availableProviders.length === 0) {
     const missingKeys: string[] = [];
-    if (!process.env.OPENAI_API_KEY) missingKeys.push('OPENAI_API_KEY');
-    if (!process.env.GEMINI_API_KEY) missingKeys.push('GEMINI_API_KEY');
-    if (!process.env.ANTHROPIC_API_KEY) missingKeys.push('ANTHROPIC_API_KEY');
+    const envCheck: Record<string, boolean> = {};
+    
+    envCheck['OPENAI_API_KEY'] = !!process.env.OPENAI_API_KEY;
+    envCheck['GEMINI_API_KEY'] = !!process.env.GEMINI_API_KEY;
+    envCheck['ANTHROPIC_API_KEY'] = !!process.env.ANTHROPIC_API_KEY;
+    
+    if (!envCheck['OPENAI_API_KEY']) missingKeys.push('OPENAI_API_KEY');
+    if (!envCheck['GEMINI_API_KEY']) missingKeys.push('GEMINI_API_KEY');
+    if (!envCheck['ANTHROPIC_API_KEY']) missingKeys.push('ANTHROPIC_API_KEY');
+    
+    // デバッグ情報をログに出力（本番環境では機密情報を避ける）
+    console.error('AI Provider Configuration Check:', {
+      availableProviders: availableProviders.length,
+      envVarsSet: envCheck,
+      missingKeys,
+      nodeEnv: process.env.NODE_ENV,
+    });
     
     throw new Error(
       `No AI providers available. Please set at least one of the following environment variables: ${missingKeys.join(', ')}`
