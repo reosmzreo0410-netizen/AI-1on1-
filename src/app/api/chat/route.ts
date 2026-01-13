@@ -13,6 +13,16 @@ function getOpenAI(): OpenAI {
   return new OpenAI({ apiKey });
 }
 
+function getModel(): string {
+  const model = process.env.OPENAI_MODEL;
+  // 有効なモデルのリスト
+  const validModels = ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'];
+  if (model && validModels.includes(model)) {
+    return model;
+  }
+  return 'gpt-4o-mini'; // デフォルト
+}
+
 // 会話開始
 export async function POST(request: NextRequest) {
   try {
@@ -60,7 +70,7 @@ export async function POST(request: NextRequest) {
 
       const openai = getOpenAI();
       const response = await openai.chat.completions.create({
-        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+        model: getModel(),
         messages: aiMessages,
         temperature: 0.8, // コーチングでは少し創造的な回答を
       });
@@ -118,7 +128,7 @@ export async function POST(request: NextRequest) {
 
       const openai = getOpenAI();
       const response = await openai.chat.completions.create({
-        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+        model: getModel(),
         messages: aiMessages,
         temperature: 0.8,
       });

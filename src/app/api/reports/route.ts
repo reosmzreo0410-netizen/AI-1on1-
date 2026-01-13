@@ -15,9 +15,22 @@ import {
 } from '@/lib/prompts';
 import { DailyReport, Issue, IssueCategory } from '@/types';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+function getOpenAI(): OpenAI {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error('OPENAI_API_KEY is not set');
+  }
+  return new OpenAI({ apiKey });
+}
+
+function getModel(): string {
+  const model = process.env.OPENAI_MODEL;
+  const validModels = ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'];
+  if (model && validModels.includes(model)) {
+    return model;
+  }
+  return 'gpt-4o-mini';
+}
 
 // 日報生成
 export async function POST(request: NextRequest) {
@@ -47,6 +60,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const openai = getOpenAI();
+
     // 日報生成
     const reportPrompt = getReportGenerationPrompt(
       conversation.messages,
@@ -54,7 +69,7 @@ export async function POST(request: NextRequest) {
     );
 
     const reportResponse = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4',
+      model: getModel(),
       messages: [{ role: 'user', content: reportPrompt }],
     });
 
@@ -84,7 +99,7 @@ export async function POST(request: NextRequest) {
     );
 
     const issueResponse = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4',
+      model: getModel(),
       messages: [{ role: 'user', content: issuePrompt }],
     });
 
