@@ -123,10 +123,14 @@ ${conversation}
 
 export function getRecommendationQueryPrompt(
   reportContent: string,
-  issues: Array<{ content: string; category: string; severity: string }>
+  issues: Array<{ content: string; category?: string; severity?: string }>
 ): string {
   const issuesText = issues.length > 0
-    ? issues.map((i) => `- ${i.content} (${i.category}, ${i.severity})`).join('\n')
+    ? issues.map((i) => {
+        const category = i.category || '未分類';
+        const severity = i.severity || 'medium';
+        return `- ${i.content} (${category}, ${severity})`;
+      }).join('\n')
     : 'なし';
 
   return `以下の日報内容と課題を分析し、課題解決に最も効果的なリソースを検索するための最適な検索クエリを3つ生成してください。
