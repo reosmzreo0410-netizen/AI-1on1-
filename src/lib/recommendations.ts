@@ -304,7 +304,7 @@ function balanceSources(recs: Recommendation[]): Recommendation[] {
 // AIを使って検索結果を評価し、最適な5つを選ぶ
 async function evaluateAndSelectRecommendations(
   reportContent: string,
-  issues: Array<{ content: string }>,
+  issues: Array<{ content: string; category?: string; severity?: string }>,
   candidates: Recommendation[]
 ): Promise<Recommendation[]> {
   const openai = getOpenAI();
