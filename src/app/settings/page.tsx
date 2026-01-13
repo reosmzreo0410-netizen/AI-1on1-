@@ -110,7 +110,7 @@ export default function SettingsPage() {
 
   const copyLoginInfo = (u: User) => {
     const loginUrl = window.location.origin;
-    const text = `【AIコーチング ログイン情報】\n\nURL: ${loginUrl}\nあなたのID: ${u.id}\n\nログイン画面でIDを入力してください。`;
+    const text = `【AI日報ツール ログイン情報】\n\nURL: ${loginUrl}\nあなたのID: ${u.id}\n\nログイン画面でIDを入力してください。`;
     navigator.clipboard.writeText(text);
     setSuccessMessage(`${u.name}さんのログイン情報をコピーしました`);
   };
@@ -213,7 +213,7 @@ export default function SettingsPage() {
                   className="w-4 h-4 text-blue-600"
                 />
                 <span className="text-gray-700">メンバー</span>
-                <span className="text-xs text-gray-500">（コーチングセッションのみ）</span>
+                <span className="text-xs text-gray-500">（日報作成のみ）</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -310,7 +310,7 @@ export default function SettingsPage() {
         <h3 className="font-semibold text-blue-800 mb-3">💡 使い方のヒント</h3>
         <ul className="space-y-2 text-blue-700 text-sm">
           <li>• 新しいメンバーを追加したら、「ログイン情報をコピー」でIDを共有できます</li>
-          <li>• メンバーは自分のIDでログインしてコーチングセッションを開始できます</li>
+          <li>• メンバーは自分のIDでログインして日報を作成できます</li>
           <li>• 管理者はすべてのメンバーの日報や課題ダッシュボードを確認できます</li>
         </ul>
       </div>

@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI 1on1 - 日報・課題管理システム",
-  description: "AIと1on1を行い、日報作成と組織課題の可視化を行うツール",
+  title: "AI日報ツール",
+  description: "AIと対話しながら日報を作成し、組織課題を可視化するツール",
 };
 
 export default async function RootLayout({

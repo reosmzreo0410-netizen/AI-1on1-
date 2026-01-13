@@ -65,7 +65,7 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto py-12 px-4">
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold text-gray-800 mb-4">
-              AIコーチング
+              AI日報ツール
             </h1>
             <p className="text-xl text-gray-600">
               こんにちは、{currentUser.name}さん
@@ -80,16 +80,15 @@ export default function HomePage() {
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors">
                   <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
                 </div>
                 <h2 className="text-2xl font-bold text-gray-800">
-                  コーチングを始める
+                  今日の振り返りをする
                 </h2>
               </div>
               <p className="text-gray-600">
-                AIコーチと一緒に今日の振り返りをしましょう。
-                気づきや改善点を見つけるお手伝いをします。
+                AIと対話しながら今日一日を振り返り、日報を作成しましょう。
               </p>
             </a>
 
@@ -103,10 +102,10 @@ export default function HomePage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800">レポート一覧</h2>
+                <h2 className="text-2xl font-bold text-gray-800">日報一覧</h2>
               </div>
               <p className="text-gray-600">
-                過去のコーチングセッションのレポートを確認できます。
+                過去の日報を確認できます。
               </p>
             </a>
 
@@ -172,12 +171,12 @@ export default function HomePage() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
             </div>
             <h1 className="text-3xl font-bold text-gray-800 mb-2">
-              AIコーチング
+              AI日報ツール
             </h1>
             <p className="text-gray-500">
               あなたのIDでログインしてください

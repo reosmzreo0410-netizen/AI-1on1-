@@ -161,36 +161,36 @@ export default function ChatPage() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                 />
               </svg>
             </div>
             <h1 className="text-3xl font-bold text-gray-800 mb-3">
-              AIコーチング
+              今日の振り返り
             </h1>
             <p className="text-gray-600 text-lg">
-              今日の振り返りを一緒にしましょう
+              AIと対話しながら日報を作成しましょう
             </p>
           </div>
 
           <div className="bg-blue-50 rounded-xl p-6 mb-8">
-            <h2 className="font-semibold text-blue-800 mb-3">💡 このセッションでできること</h2>
+            <h2 className="font-semibold text-blue-800 mb-3">📝 日報の作成について</h2>
             <ul className="space-y-2 text-blue-700">
               <li className="flex items-start gap-2">
                 <span className="text-blue-500">•</span>
-                今日一日の振り返りと内省
+                今日一日を振り返って話すだけでOK
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue-500">•</span>
-                うまくいったことの発見と言語化
+                うまくいったこと、困ったことを整理
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue-500">•</span>
-                課題やモヤモヤの整理
+                AIが質問しながら深掘りをサポート
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue-500">•</span>
-                明日への小さな一歩を見つける
+                終了後、自動的に日報が作成されます
               </li>
             </ul>
           </div>
@@ -228,7 +228,7 @@ export default function ChatPage() {
                 準備中...
               </span>
             ) : (
-              'コーチングを始める'
+              '振り返りを始める'
             )}
           </button>
         </div>
@@ -242,7 +242,7 @@ export default function ChatPage() {
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
-            コーチングセッション
+            日報作成
           </h1>
           <p className="text-gray-500">
             {user?.name}さん • {new Date().toLocaleDateString('ja-JP', {
@@ -255,7 +255,7 @@ export default function ChatPage() {
         {status === 'in_progress' && (
           <div className="flex items-center gap-2 text-green-600">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            セッション中
+            対話中
           </div>
         )}
       </div>

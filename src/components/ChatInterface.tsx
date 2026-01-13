@@ -126,7 +126,7 @@ export default function ChatInterface({
         </form>
       ) : (
         <div className="p-4 bg-green-50 border-t rounded-b-xl text-center">
-          <p className="text-green-700 font-medium">1on1が完了しました</p>
+          <p className="text-green-700 font-medium">日報が作成されました</p>
           <a
             href="/reports"
             className="inline-block mt-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
