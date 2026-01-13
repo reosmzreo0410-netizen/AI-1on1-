@@ -49,9 +49,18 @@ async function buildQueriesWithAI(
       return parsed.queries.slice(0, 5);
     }
   } catch (error: any) {
-    // レート制限エラーの場合はフォールバックを使用
-    if (error?.message?.includes('Rate limit') || error?.status === 429) {
-      console.warn('OpenAI API rate limit reached, using fallback queries');
+    // レート制限エラー（TPM/RPM）の場合はフォールバックを使用
+    const errorMessage = error?.message || '';
+    const isRateLimitError = 
+      error?.status === 429 || 
+      errorMessage.includes('Rate limit') ||
+      errorMessage.includes('requests per min (RPM)') ||
+      errorMessage.includes('tokens per min (TPM)');
+    
+    if (isRateLimitError) {
+      const rateLimitType = errorMessage.includes('RPM') ? 'RPM' : 
+                           errorMessage.includes('TPM') ? 'TPM' : 'Rate limit';
+      console.warn(`OpenAI API ${rateLimitType} rate limit reached, using fallback queries`);
       return buildQueriesFallback(reportContent, issues);
     }
     console.error('Failed to generate queries with AI:', error);
@@ -433,9 +442,18 @@ async function evaluateAndSelectRecommendations(
       return result;
     }
   } catch (error: any) {
-    // レート制限エラーの場合はフォールバックを使用
-    if (error?.message?.includes('Rate limit') || error?.status === 429) {
-      console.warn('OpenAI API rate limit reached, using fallback selection');
+    // レート制限エラー（TPM/RPM）の場合はフォールバックを使用
+    const errorMessage = error?.message || '';
+    const isRateLimitError = 
+      error?.status === 429 || 
+      errorMessage.includes('Rate limit') ||
+      errorMessage.includes('requests per min (RPM)') ||
+      errorMessage.includes('tokens per min (TPM)');
+    
+    if (isRateLimitError) {
+      const rateLimitType = errorMessage.includes('RPM') ? 'RPM' : 
+                           errorMessage.includes('TPM') ? 'TPM' : 'Rate limit';
+      console.warn(`OpenAI API ${rateLimitType} rate limit reached, using fallback selection`);
       // 課題に関連するキーワードでフィルタリング
       return selectRecommendationsByKeywords(issues, candidates);
     }

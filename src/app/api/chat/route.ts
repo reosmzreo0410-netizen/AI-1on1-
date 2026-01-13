@@ -187,6 +187,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Chat error:', error);
     const errorMessage = error instanceof Error ? error.message : 'チャットエラーが発生しました';
+    
     if (errorMessage.includes('OPENAI_API_KEY')) {
       return NextResponse.json(
         { success: false, error: '.env.local ファイルで OPENAI_API_KEY を設定してください' },
@@ -197,6 +198,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'OpenAIモデルIDが無効です。環境変数 OPENAI_MODEL を確認してください。' },
         { status: 400 }
+      );
+    }
+    // レート制限エラー（RPM/TPM）の検出
+    if (errorMessage.includes('Rate limit') || errorMessage.includes('requests per min (RPM)') || errorMessage.includes('tokens per min (TPM)')) {
+      const rateLimitType = errorMessage.includes('RPM') ? 'リクエスト数' : 
+                           errorMessage.includes('TPM') ? 'トークン数' : 'レート';
+      // 待機時間を抽出（例: "Please try again in 20s"）
+      const waitTimeMatch = errorMessage.match(/try again in (\d+[smh])/i);
+      const waitTime = waitTimeMatch ? waitTimeMatch[1] : 'しばらく';
+      
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: `OpenAI APIの${rateLimitType}制限に達しました。${waitTime}待ってから再度お試しください。リコメンド機能は自動的にフォールバックモードで動作します。` 
+        },
+        { status: 429 }
       );
     }
     return NextResponse.json(
