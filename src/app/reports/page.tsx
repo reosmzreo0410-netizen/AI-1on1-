@@ -50,6 +50,38 @@ export default function ReportsPage() {
     await fetchReports(user, newValue);
   };
 
+  const handleDeleteReport = async (reportId: string) => {
+    if (!user || user.role !== 'admin') return;
+    
+    if (!confirm('この日報を削除してもよろしいですか？この操作は取り消せません。')) {
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/reports', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reportId }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        // 詳細表示中の場合は一覧に戻る
+        if (selectedReport && selectedReport.id === reportId) {
+          setSelectedReport(null);
+        }
+        // 日報一覧を再取得
+        await fetchReports(user, showAllReports);
+        alert('日報を削除しました');
+      } else {
+        alert(data.error || '日報の削除に失敗しました');
+      }
+    } catch (error) {
+      console.error('Failed to delete report:', error);
+      alert('日報の削除に失敗しました');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -70,16 +102,39 @@ export default function ReportsPage() {
         </button>
 
         <div className="bg-white rounded-xl shadow-lg p-8">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-800">
-              {new Date(selectedReport.date).toLocaleDateString('ja-JP', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-              の日報
-            </h1>
-            <p className="text-gray-500">{selectedReport.userName}</p>
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">
+                {new Date(selectedReport.date).toLocaleDateString('ja-JP', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+                の日報
+              </h1>
+              <p className="text-gray-500">{selectedReport.userName}</p>
+            </div>
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => handleDeleteReport(selectedReport.id)}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+                削除
+              </button>
+            )}
           </div>
 
           <div className="prose max-w-none">
@@ -238,6 +293,7 @@ export default function ReportsPage() {
               key={report.id}
               report={report}
               onViewDetail={setSelectedReport}
+              onDelete={user?.role === 'admin' ? handleDeleteReport : undefined}
             />
           ))}
         </div>

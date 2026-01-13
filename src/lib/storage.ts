@@ -193,6 +193,23 @@ export async function getAllReports(): Promise<DailyReport[]> {
   );
 }
 
+export async function deleteReport(id: string): Promise<boolean> {
+  try {
+    // 日報を削除
+    await kv.del(`report:${id}`);
+    
+    // IDリストからも削除
+    const ids = await kv.get<string[]>(KEYS.REPORTS) || [];
+    const updatedIds = ids.filter((reportId) => reportId !== id);
+    await kv.set(KEYS.REPORTS, updatedIds);
+    
+    return true;
+  } catch (error) {
+    console.error('Error deleting report:', error);
+    return false;
+  }
+}
+
 // 課題関連
 export async function getIssues(): Promise<Issue[]> {
   try {

@@ -8,6 +8,7 @@ import {
   getAllReports,
   getReport,
   saveIssue,
+  deleteReport,
 } from '@/lib/storage';
 import {
   getReportGenerationPrompt,
@@ -212,6 +213,62 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return NextResponse.json(
       { success: false, error: '日報の取得に失敗しました' },
+      { status: 500 }
+    );
+  }
+}
+
+// 日報削除（管理者のみ）
+export async function DELETE(request: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: '認証が必要です' },
+        { status: 401 }
+      );
+    }
+
+    // 管理者のみ削除可能
+    if (!isAdmin(user)) {
+      return NextResponse.json(
+        { success: false, error: '管理者のみ削除できます' },
+        { status: 403 }
+      );
+    }
+
+    const { reportId } = await request.json();
+
+    if (!reportId) {
+      return NextResponse.json(
+        { success: false, error: 'reportId が必要です' },
+        { status: 400 }
+      );
+    }
+
+    // 日報が存在するか確認
+    const report = await getReport(reportId);
+    if (!report) {
+      return NextResponse.json(
+        { success: false, error: '日報が見つかりません' },
+        { status: 404 }
+      );
+    }
+
+    // 日報を削除
+    const success = await deleteReport(reportId);
+    if (!success) {
+      return NextResponse.json(
+        { success: false, error: '日報の削除に失敗しました' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true, message: '日報を削除しました' });
+  } catch (error) {
+    console.error('Report deletion error:', error);
+    return NextResponse.json(
+      { success: false, error: '日報の削除に失敗しました' },
       { status: 500 }
     );
   }
