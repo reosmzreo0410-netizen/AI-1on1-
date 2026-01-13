@@ -239,6 +239,8 @@ function dedupe(recs: Recommendation[]): Recommendation[] {
 
 // ソースのバランスを考慮してリコメンドを選ぶ（YouTube、記事、書籍からバランス良く）
 function balanceSources(recs: Recommendation[]): Recommendation[] {
+  if (recs.length === 0) return [];
+  
   const bySource = {
     youtube: recs.filter(r => r.source === 'youtube'),
     article: recs.filter(r => r.source === 'article'),
@@ -252,6 +254,7 @@ function balanceSources(recs: Recommendation[]): Recommendation[] {
   // 各ソースから順番に選ぶ（ラウンドロビン方式）
   let sourceIndex = 0;
   
+  // まずは各ソースから均等に選ぶ（最大5件まで）
   while (result.length < 5 && (bySource.youtube.length > 0 || bySource.article.length > 0 || bySource.book.length > 0)) {
     let added = false;
     for (let i = 0; i < sources.length; i++) {
@@ -270,13 +273,22 @@ function balanceSources(recs: Recommendation[]): Recommendation[] {
     sourceIndex++;
   }
 
-  // まだ5つに満たない場合は残りを追加
+  // まだ5つに満たない場合は残りを追加（searchも含む）
   const remaining = [...bySource.youtube, ...bySource.article, ...bySource.book, ...bySource.search];
   while (result.length < 5 && remaining.length > 0) {
     result.push(remaining.shift()!);
   }
 
-  return result;
+  // 確実に5件返す（不足している場合は最初の要素を繰り返し追加）
+  if (result.length < 5 && recs.length > 0) {
+    const resultUrls = new Set(result.map(r => r.url));
+    const additional = recs
+      .filter(r => !resultUrls.has(r.url))
+      .slice(0, 5 - result.length);
+    result.push(...additional);
+  }
+
+  return result.slice(0, 5); // 最大5件を返す
 }
 
 // AIを使って検索結果を評価し、最適な5つを選ぶ
@@ -330,9 +342,30 @@ async function evaluateAndSelectRecommendations(
         })
         .filter(Boolean) as Recommendation[];
       
+      // AIが選んだ結果が5件未満の場合は、残りを候補から追加
+      let finalSelected = selected;
+      if (selected.length < 5) {
+        const selectedUrls = new Set(selected.map(s => s.url));
+        const additional = candidates
+          .filter(c => !selectedUrls.has(c.url))
+          .slice(0, 5 - selected.length);
+        finalSelected = [...selected, ...additional];
+      }
+      
       // ソースのバランスを考慮して5つ選ぶ
-      const balanced = balanceSources(selected.slice(0, 10));
-      return balanced.slice(0, 5);
+      const balanced = balanceSources(finalSelected.slice(0, 15));
+      const result = balanced.slice(0, 5);
+      
+      // 確実に5件返す（不足している場合は候補から追加）
+      if (result.length < 5) {
+        const resultUrls = new Set(result.map(r => r.url));
+        const remaining = candidates
+          .filter(c => !resultUrls.has(c.url))
+          .slice(0, 5 - result.length);
+        return [...result, ...remaining].slice(0, 5);
+      }
+      
+      return result;
     }
   } catch (error) {
     console.error('Failed to evaluate recommendations:', error);
@@ -408,7 +441,28 @@ export async function generateRecommendations(params: {
 
     // ソースのバランスを考慮して最終的に5つを返す
     const balanced = balanceSources(selected.length > 0 ? selected : unique);
-    return balanced.slice(0, 5);
+    let result = balanced.slice(0, 5);
+    
+    // 確実に5件返す（不足している場合は候補から追加）
+    if (result.length < 5 && unique.length > result.length) {
+      const resultUrls = new Set(result.map(r => r.url));
+      const remaining = unique
+        .filter(c => !resultUrls.has(c.url))
+        .slice(0, 5 - result.length);
+      result = [...result, ...remaining].slice(0, 5);
+    }
+    
+    // 最終確認：5件未満の場合はフォールバックを追加
+    if (result.length < 5) {
+      const fallback = fallbackRecommendations(queries);
+      const resultUrls = new Set(result.map(r => r.url));
+      const additionalFallback = fallback
+        .filter(f => !resultUrls.has(f.url))
+        .slice(0, 5 - result.length);
+      result = [...result, ...additionalFallback].slice(0, 5);
+    }
+    
+    return result;
   } catch (error) {
     console.error('Failed to generate recommendations:', error);
     // エラー時もフォールバックを返す
