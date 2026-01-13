@@ -140,10 +140,10 @@ export default function ChatInterface({
           {recommendations.length > 0 && (
             <div className="mt-4 text-left">
               <div className="font-semibold text-green-800 mb-2">
-                おすすめリソース（最大3件）
+                おすすめリソース（最大5件）
               </div>
               <div className="space-y-2">
-                {recommendations.slice(0, 3).map((rec) => (
+                {recommendations.slice(0, 5).map((rec) => (
                   <a
                     key={rec.id}
                     href={rec.url}

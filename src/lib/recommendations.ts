@@ -46,7 +46,7 @@ async function buildQueriesWithAI(
     const parsed = JSON.parse(content);
     
     if (parsed.queries && Array.isArray(parsed.queries)) {
-      return parsed.queries.slice(0, 3);
+      return parsed.queries.slice(0, 5);
     }
   } catch (error) {
     console.error('Failed to generate queries with AI:', error);
@@ -216,7 +216,7 @@ async function searchBooks(query: string): Promise<Recommendation[]> {
 
 function fallbackRecommendations(queries: string[]): Recommendation[] {
   // APIキーがない場合でも検索画面に飛べるリンクを返す
-  return queries.slice(0, 3).map((q, idx) => ({
+  return queries.slice(0, 5).map((q, idx) => ({
     id: `search_${idx}`,
     title: `🔍 ${q} を検索`,
     url: `https://www.google.com/search?q=${encodeURIComponent(q)}`,
@@ -237,7 +237,50 @@ function dedupe(recs: Recommendation[]): Recommendation[] {
   });
 }
 
-// AIを使って検索結果を評価し、最適な3つを選ぶ
+// ソースのバランスを考慮してリコメンドを選ぶ（YouTube、記事、書籍からバランス良く）
+function balanceSources(recs: Recommendation[]): Recommendation[] {
+  const bySource = {
+    youtube: recs.filter(r => r.source === 'youtube'),
+    article: recs.filter(r => r.source === 'article'),
+    book: recs.filter(r => r.source === 'book'),
+    search: recs.filter(r => r.source === 'search'),
+  };
+
+  const result: Recommendation[] = [];
+  const maxPerSource = Math.ceil(5 / 3); // YouTube、記事、書籍から各2つ程度
+
+  // 各ソースから順番に選ぶ（ラウンドロビン方式）
+  let sourceIndex = 0;
+  const sources: Array<keyof typeof bySource> = ['youtube', 'article', 'book'];
+  
+  while (result.length < 5 && recs.length > 0) {
+    let added = false;
+    for (let i = 0; i < sources.length; i++) {
+      const source = sources[(sourceIndex + i) % sources.length];
+      const sourceRecs = bySource[source];
+      
+      if (sourceRecs.length > 0) {
+        const rec = sourceRecs.shift()!;
+        result.push(rec);
+        added = true;
+        break;
+      }
+    }
+    
+    if (!added) break;
+    sourceIndex++;
+  }
+
+  // まだ5つに満たない場合は残りを追加
+  const remaining = [...bySource.youtube, ...bySource.article, ...bySource.book, ...bySource.search];
+  while (result.length < 5 && remaining.length > 0) {
+    result.push(remaining.shift()!);
+  }
+
+  return result;
+}
+
+// AIを使って検索結果を評価し、最適な5つを選ぶ
 async function evaluateAndSelectRecommendations(
   reportContent: string,
   issues: Array<{ content: string }>,
@@ -245,11 +288,11 @@ async function evaluateAndSelectRecommendations(
 ): Promise<Recommendation[]> {
   const openai = getOpenAI();
   if (!openai || candidates.length === 0) {
-    return candidates.slice(0, 3);
+    return candidates.slice(0, 5);
   }
 
-  // 候補が3つ以下の場合はそのまま返す
-  if (candidates.length <= 3) {
+  // 候補が5つ以下の場合はそのまま返す
+  if (candidates.length <= 5) {
     return candidates;
   }
 
@@ -286,14 +329,17 @@ async function evaluateAndSelectRecommendations(
         })
         .filter(Boolean) as Recommendation[];
       
-      return selected.slice(0, 3);
+      // ソースのバランスを考慮して5つ選ぶ
+      const balanced = balanceSources(selected.slice(0, 10)); // 上位10からバランス良く選ぶ
+      return balanced.slice(0, 5);
     }
   } catch (error) {
     console.error('Failed to evaluate recommendations:', error);
   }
 
-  // エラー時は最初の3つを返す
-  return candidates.slice(0, 3);
+  // エラー時はソースのバランスを考慮して5つを返す
+  const balanced = balanceSources(candidates);
+  return balanced.slice(0, 5);
 }
 
 export async function generateRecommendations(params: {
@@ -328,17 +374,7 @@ export async function generateRecommendations(params: {
         // クエリごとに異なるソースを優先的に検索
         const promises: Promise<Recommendation[]>[] = [];
         
-        if (queryIdx === 0 && YOUTUBE_API_KEY) {
-          promises.push(searchYouTube(q));
-        }
-        if (queryIdx === 1 && GOOGLE_API_KEY && GOOGLE_CSE_ID) {
-          promises.push(searchWeb(q));
-        }
-        if (queryIdx === 2 && GOOGLE_API_KEY) {
-          promises.push(searchBooks(q));
-        }
-        
-        // すべてのソースからも検索
+        // 各クエリに対してすべてのソースから検索（より多くの候補を取得）
         if (YOUTUBE_API_KEY) promises.push(searchYouTube(q));
         if (GOOGLE_API_KEY && GOOGLE_CSE_ID) promises.push(searchWeb(q));
         if (GOOGLE_API_KEY) promises.push(searchBooks(q));
@@ -366,14 +402,16 @@ export async function generateRecommendations(params: {
       return fallbackRecommendations(queries);
     }
 
-    // AIで評価して最適な3つを選ぶ
+    // AIで評価して最適な5つを選ぶ
     const selected = await evaluateAndSelectRecommendations(
       params.reportContent,
       normalizedIssues.map(i => ({ content: i.content })),
       unique
     );
 
-    return selected.length > 0 ? selected : unique.slice(0, 3);
+    // ソースのバランスを考慮して最終的に5つを返す
+    const balanced = balanceSources(selected.length > 0 ? selected : unique);
+    return balanced.slice(0, 5);
   } catch (error) {
     console.error('Failed to generate recommendations:', error);
     // エラー時もフォールバックを返す

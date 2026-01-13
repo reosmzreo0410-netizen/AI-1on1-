@@ -201,7 +201,7 @@ export default function ReportsPage() {
                 おすすめリソース
               </h2>
               <p className="text-sm text-gray-600 mb-4">
-                この日報の内容と課題を分析し、解決に役立つリソースを厳選しました。
+                この日報の内容と課題を詳細に分析し、課題解決に最もクリティカルで効果的なリソースを5つ厳選しました。YouTube動画、記事、書籍からバランス良く選んでいます。
               </p>
               <div className="grid gap-4 md:grid-cols-1">
                 {selectedReport.recommendations.map((rec) => (
