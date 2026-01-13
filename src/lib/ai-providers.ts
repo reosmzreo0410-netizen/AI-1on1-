@@ -29,22 +29,46 @@ function getProviderPriority(): AIProvider[] {
 // OpenAIクライアントの取得
 function getOpenAIClient(): OpenAI | null {
   const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return null;
-  return new OpenAI({ apiKey });
+  if (!apiKey || apiKey.trim() === '') {
+    console.warn('OPENAI_API_KEY is not set or empty');
+    return null;
+  }
+  try {
+    return new OpenAI({ apiKey });
+  } catch (error) {
+    console.error('Failed to initialize OpenAI client:', error);
+    return null;
+  }
 }
 
 // Geminiクライアントの取得
 function getGeminiClient(): GoogleGenerativeAI | null {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return null;
-  return new GoogleGenerativeAI(apiKey);
+  if (!apiKey || apiKey.trim() === '') {
+    console.warn('GEMINI_API_KEY is not set or empty');
+    return null;
+  }
+  try {
+    return new GoogleGenerativeAI(apiKey);
+  } catch (error) {
+    console.error('Failed to initialize Gemini client:', error);
+    return null;
+  }
 }
 
 // Claudeクライアントの取得
 function getClaudeClient(): Anthropic | null {
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return null;
-  return new Anthropic({ apiKey });
+  if (!apiKey || apiKey.trim() === '') {
+    console.warn('ANTHROPIC_API_KEY is not set or empty');
+    return null;
+  }
+  try {
+    return new Anthropic({ apiKey });
+  } catch (error) {
+    console.error('Failed to initialize Claude client:', error);
+    return null;
+  }
 }
 
 // OpenAIモデル名の取得
@@ -246,27 +270,50 @@ export async function chatCompletion(
   // 利用可能なプロバイダーがない場合
   if (availableProviders.length === 0) {
     const missingKeys: string[] = [];
-    const envCheck: Record<string, boolean> = {};
+    const envCheck: Record<string, { exists: boolean; isEmpty: boolean }> = {};
     
-    envCheck['OPENAI_API_KEY'] = !!process.env.OPENAI_API_KEY;
-    envCheck['GEMINI_API_KEY'] = !!process.env.GEMINI_API_KEY;
-    envCheck['ANTHROPIC_API_KEY'] = !!process.env.ANTHROPIC_API_KEY;
+    // より詳細な環境変数チェック
+    const openaiKey = process.env.OPENAI_API_KEY;
+    const geminiKey = process.env.GEMINI_API_KEY;
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
     
-    if (!envCheck['OPENAI_API_KEY']) missingKeys.push('OPENAI_API_KEY');
-    if (!envCheck['GEMINI_API_KEY']) missingKeys.push('GEMINI_API_KEY');
-    if (!envCheck['ANTHROPIC_API_KEY']) missingKeys.push('ANTHROPIC_API_KEY');
+    envCheck['OPENAI_API_KEY'] = {
+      exists: !!openaiKey,
+      isEmpty: !openaiKey || openaiKey.trim() === '',
+    };
+    envCheck['GEMINI_API_KEY'] = {
+      exists: !!geminiKey,
+      isEmpty: !geminiKey || geminiKey.trim() === '',
+    };
+    envCheck['ANTHROPIC_API_KEY'] = {
+      exists: !!anthropicKey,
+      isEmpty: !anthropicKey || anthropicKey.trim() === '',
+    };
+    
+    if (!envCheck['OPENAI_API_KEY'].exists || envCheck['OPENAI_API_KEY'].isEmpty) {
+      missingKeys.push('OPENAI_API_KEY');
+    }
+    if (!envCheck['GEMINI_API_KEY'].exists || envCheck['GEMINI_API_KEY'].isEmpty) {
+      missingKeys.push('GEMINI_API_KEY');
+    }
+    if (!envCheck['ANTHROPIC_API_KEY'].exists || envCheck['ANTHROPIC_API_KEY'].isEmpty) {
+      missingKeys.push('ANTHROPIC_API_KEY');
+    }
     
     // デバッグ情報をログに出力（本番環境では機密情報を避ける）
     console.error('AI Provider Configuration Check:', {
       availableProviders: availableProviders.length,
-      envVarsSet: envCheck,
+      envVarsStatus: envCheck,
       missingKeys,
       nodeEnv: process.env.NODE_ENV,
+      vercelEnv: process.env.VERCEL_ENV,
+      allEnvVars: Object.keys(process.env).filter(key => 
+        key.includes('OPENAI') || key.includes('GEMINI') || key.includes('ANTHROPIC') || key.includes('CLAUDE')
+      ),
     });
     
-    throw new Error(
-      `No AI providers available. Please set at least one of the following environment variables: ${missingKeys.join(', ')}`
-    );
+    const errorMessage = `No AI providers available. Please set at least one of the following environment variables in Vercel: ${missingKeys.join(', ')}. Make sure to set them for "All Environments" and redeploy after adding/changing environment variables.`;
+    throw new Error(errorMessage);
   }
 
   // 利用可能なプロバイダーで試行

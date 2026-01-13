@@ -173,10 +173,20 @@ export async function POST(request: NextRequest) {
         nodeEnv: process.env.NODE_ENV,
       });
       
+      const envStatus = {
+        OPENAI_API_KEY: !!process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.trim() !== '',
+        GEMINI_API_KEY: !!process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '',
+        ANTHROPIC_API_KEY: !!process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY.trim() !== '',
+      };
+      
+      const availableProviders = Object.entries(envStatus)
+        .filter(([_, available]) => available)
+        .map(([key, _]) => key.replace('_API_KEY', ''));
+      
       return NextResponse.json(
         { 
           success: false, 
-          error: 'すべてのAIプロバイダーでエラーが発生しました。Vercelのログを確認してください。環境変数（OPENAI_API_KEY、GEMINI_API_KEY、ANTHROPIC_API_KEY）が正しく設定されているか、また「All Environments」に設定されているか確認してください。' 
+          error: `すべてのAIプロバイダーでエラーが発生しました。設定されている環境変数: ${availableProviders.length > 0 ? availableProviders.join(', ') : 'なし'}。Vercelの「Settings」→「Environment Variables」で環境変数が「All Environments」に設定されているか確認し、新しいデプロイを実行してください。詳細は /api/debug/env で確認できます。` 
         },
         { status: 500 }
       );
@@ -185,20 +195,36 @@ export async function POST(request: NextRequest) {
     // プロバイダーが利用できない場合
     if (errorMessage.includes('No AI providers available')) {
       // デバッグ情報をログに出力
+      const envStatus = {
+        OPENAI_API_KEY: {
+          exists: !!process.env.OPENAI_API_KEY,
+          isEmpty: !process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY.trim() === '',
+        },
+        GEMINI_API_KEY: {
+          exists: !!process.env.GEMINI_API_KEY,
+          isEmpty: !process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY.trim() === '',
+        },
+        ANTHROPIC_API_KEY: {
+          exists: !!process.env.ANTHROPIC_API_KEY,
+          isEmpty: !process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY.trim() === '',
+        },
+      };
+      
       console.error('AI Provider Error Details:', {
         errorMessage,
-        envCheck: {
-          OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
-          GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
-          ANTHROPIC_API_KEY: !!process.env.ANTHROPIC_API_KEY,
-        },
+        envStatus,
         nodeEnv: process.env.NODE_ENV,
+        vercelEnv: process.env.VERCEL_ENV,
       });
+      
+      const missingKeys = Object.entries(envStatus)
+        .filter(([_, status]) => !status.exists || status.isEmpty)
+        .map(([key, _]) => key);
       
       return NextResponse.json(
         { 
           success: false, 
-          error: 'AIプロバイダーのAPIキーが設定されていません。OPENAI_API_KEY、GEMINI_API_KEY、ANTHROPIC_API_KEYのいずれかをVercelの環境変数に設定してください。環境変数を設定した後は、必ず新しいデプロイを実行してください。' 
+          error: `AIプロバイダーのAPIキーが設定されていません。以下の環境変数が不足しています: ${missingKeys.join(', ')}。Vercelの「Settings」→「Environment Variables」で「All Environments」に設定し、新しいデプロイを実行してください。デバッグ情報は /api/debug/env で確認できます。` 
         },
         { status: 500 }
       );
