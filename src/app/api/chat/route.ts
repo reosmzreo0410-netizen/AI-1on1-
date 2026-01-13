@@ -42,8 +42,7 @@ export async function POST(request: NextRequest) {
       const recentReports = await getReportsByUser(user.id);
       const recentReportsSummary = recentReports
         .slice(0, 3) // 最新3件のレポートを対象
-        .map((report) => `日付: ${report.date}\n内容の要約: ${report.content.substring(0, 100)}...`) // 簡潔な要約
-        .join('\n\n');
+        .map((report) => `日付: ${report.date}\n内容の要約: ${report.content.substring(0, 100)}...`); // 簡潔な要約（配列のまま）
 
       const systemPrompt = getCoachingSystemPrompt(user.name, recentReportsSummary);
       const now = new Date();
