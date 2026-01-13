@@ -2,7 +2,7 @@ import { Recommendation } from '@/types';
 import OpenAI from 'openai';
 import { getRecommendationQueryPrompt, getRecommendationEvaluationPrompt } from './prompts';
 
-type IssueInput = { content: string; category?: string; severity?: string } | string;
+type IssueInput = { content: string; category?: string; severity?: string };
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
@@ -30,7 +30,6 @@ async function buildQueriesWithAI(
 ): Promise<string[]> {
   const openai = getOpenAI();
   if (!openai) {
-    // OpenAI APIキーがない場合は簡易的なクエリを生成
     return buildQueriesFallback(reportContent, issues);
   }
 
@@ -40,6 +39,7 @@ async function buildQueriesWithAI(
       model: getModel(),
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
+      response_format: { type: 'json_object' },
     });
 
     const content = response.choices[0]?.message?.content || '';
@@ -61,22 +61,26 @@ function buildQueriesFallback(
   issues: Array<{ content: string; category?: string; severity?: string }>
 ): string[] {
   const issueTexts = issues
-    .map((item) => (typeof item === 'string' ? item : item.content))
+    .map((item) => item.content)
     .filter(Boolean)
-    .slice(0, 3);
+    .slice(0, 5);
 
   const condensedReport = reportContent.slice(0, 400);
   const queries: string[] = [];
 
   if (issueTexts.length > 0) {
-    queries.push(`${issueTexts[0]} 解決方法`);
-    queries.push(`${issueTexts[0]} ベストプラクティス`);
+    issueTexts.forEach((issue, idx) => {
+      if (idx < 3) {
+        queries.push(`${issue} 解決方法`);
+      }
+    });
   }
   if (condensedReport) {
     queries.push(`${condensedReport.slice(0, 100)} 改善`);
+    queries.push(`${condensedReport.slice(0, 100)} ベストプラクティス`);
   }
 
-  return Array.from(new Set(queries)).slice(0, 3);
+  return Array.from(new Set(queries)).slice(0, 5);
 }
 
 async function fetchJson<T>(url: string): Promise<T | null> {
@@ -93,7 +97,6 @@ async function fetchJson<T>(url: string): Promise<T | null> {
 async function searchYouTube(query: string): Promise<Recommendation[]> {
   if (!YOUTUBE_API_KEY) return [];
   
-  // 日本語クエリを最適化
   const optimizedQuery = query + ' 日本語';
   
   const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=10&q=${encodeURIComponent(
@@ -140,7 +143,6 @@ async function searchYouTube(query: string): Promise<Recommendation[]> {
 async function searchWeb(query: string): Promise<Recommendation[]> {
   if (!GOOGLE_API_KEY || !GOOGLE_CSE_ID) return [];
   
-  // 日本語サイトを優先的に検索
   const optimizedQuery = query + ' site:jp OR site:com';
   
   const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CSE_ID}&q=${encodeURIComponent(
@@ -172,7 +174,6 @@ async function searchWeb(query: string): Promise<Recommendation[]> {
 async function searchBooks(query: string): Promise<Recommendation[]> {
   if (!GOOGLE_API_KEY) return [];
   
-  // 日本語書籍を優先的に検索
   const optimizedQuery = query + ' language:ja';
   
   const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
@@ -215,14 +216,13 @@ async function searchBooks(query: string): Promise<Recommendation[]> {
 }
 
 function fallbackRecommendations(queries: string[]): Recommendation[] {
-  // APIキーがない場合でも検索画面に飛べるリンクを返す
   return queries.slice(0, 5).map((q, idx) => ({
     id: `search_${idx}`,
     title: `🔍 ${q} を検索`,
     url: `https://www.google.com/search?q=${encodeURIComponent(q)}`,
     source: 'search' as const,
     description: 'このキーワードでGoogle検索を行い、関連するリソースを見つけることができます。',
-    reason: '外部APIキー（YouTube/Google Custom Search/Google Books）が設定されていないため、検索リンクを提供しています。Vercelの環境変数設定でAPIキーを追加すると、自動的に動画・記事・書籍がレコメンドされます。',
+    reason: '外部APIキー（YouTube/Google Custom Search/Google Books）が設定されていないため、検索リンクを提供しています。',
   }));
 }
 
@@ -247,13 +247,12 @@ function balanceSources(recs: Recommendation[]): Recommendation[] {
   };
 
   const result: Recommendation[] = [];
-  const maxPerSource = Math.ceil(5 / 3); // YouTube、記事、書籍から各2つ程度
-
-  // 各ソースから順番に選ぶ（ラウンドロビン方式）
-  let sourceIndex = 0;
   const sources: Array<keyof typeof bySource> = ['youtube', 'article', 'book'];
   
-  while (result.length < 5 && recs.length > 0) {
+  // 各ソースから順番に選ぶ（ラウンドロビン方式）
+  let sourceIndex = 0;
+  
+  while (result.length < 5 && (bySource.youtube.length > 0 || bySource.article.length > 0 || bySource.book.length > 0)) {
     let added = false;
     for (let i = 0; i < sources.length; i++) {
       const source = sources[(sourceIndex + i) % sources.length];
@@ -288,12 +287,13 @@ async function evaluateAndSelectRecommendations(
 ): Promise<Recommendation[]> {
   const openai = getOpenAI();
   if (!openai || candidates.length === 0) {
-    return candidates.slice(0, 5);
+    const balanced = balanceSources(candidates);
+    return balanced.slice(0, 5);
   }
 
   // 候補が5つ以下の場合はそのまま返す
   if (candidates.length <= 5) {
-    return candidates;
+    return balanceSources(candidates);
   }
 
   try {
@@ -312,6 +312,7 @@ async function evaluateAndSelectRecommendations(
       model: getModel(),
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.3,
+      response_format: { type: 'json_object' },
     });
 
     const content = response.choices[0]?.message?.content || '';
@@ -330,7 +331,7 @@ async function evaluateAndSelectRecommendations(
         .filter(Boolean) as Recommendation[];
       
       // ソースのバランスを考慮して5つ選ぶ
-      const balanced = balanceSources(selected.slice(0, 10)); // 上位10からバランス良く選ぶ
+      const balanced = balanceSources(selected.slice(0, 10));
       return balanced.slice(0, 5);
     }
   } catch (error) {
@@ -349,9 +350,6 @@ export async function generateRecommendations(params: {
   try {
     // 課題を正規化
     const normalizedIssues = params.issues.map((item) => {
-      if (typeof item === 'string') {
-        return { content: item };
-      }
       return {
         content: item.content,
         category: item.category,
@@ -363,18 +361,17 @@ export async function generateRecommendations(params: {
     const queries = await buildQueriesWithAI(params.reportContent, normalizedIssues);
 
     if (queries.length === 0) {
-      return fallbackRecommendations(['日報 改善', '課題解決', 'スキルアップ']);
+      return fallbackRecommendations(['日報 改善', '課題解決', 'スキルアップ', 'ベストプラクティス', '実践方法']);
     }
 
     const allResults: Recommendation[] = [];
 
     // 各クエリに対して並列検索
-    const searchPromises = queries.map(async (q, queryIdx) => {
+    const searchPromises = queries.map(async (q) => {
       try {
-        // クエリごとに異なるソースを優先的に検索
         const promises: Promise<Recommendation[]>[] = [];
         
-        // 各クエリに対してすべてのソースから検索（より多くの候補を取得）
+        // すべてのソースから検索
         if (YOUTUBE_API_KEY) promises.push(searchYouTube(q));
         if (GOOGLE_API_KEY && GOOGLE_CSE_ID) promises.push(searchWeb(q));
         if (GOOGLE_API_KEY) promises.push(searchBooks(q));
@@ -419,6 +416,8 @@ export async function generateRecommendations(params: {
       params.reportContent.slice(0, 50) || '日報 改善',
       '課題解決',
       'スキルアップ',
+      'ベストプラクティス',
+      '実践方法',
     ];
     return fallbackRecommendations(fallbackQueries);
   }
