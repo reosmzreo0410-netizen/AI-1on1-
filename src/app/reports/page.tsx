@@ -125,6 +125,77 @@ export default function ReportsPage() {
               return null;
             })}
           </div>
+
+          {/* レコメンド表示 */}
+          {selectedReport.recommendations && selectedReport.recommendations.length > 0 && (
+            <div className="mt-8 pt-8 border-t border-gray-200">
+              <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <svg
+                  className="w-6 h-6 text-blue-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+                おすすめリソース
+              </h2>
+              <p className="text-sm text-gray-600 mb-4">
+                この日報の内容と課題を分析し、解決に役立つリソースを厳選しました。
+              </p>
+              <div className="grid gap-4 md:grid-cols-1">
+                {selectedReport.recommendations.map((rec) => (
+                  <a
+                    key={rec.id}
+                    href={rec.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block p-4 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 hover:border-blue-400 hover:shadow-md transition-all"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">
+                            {rec.source === 'youtube' && '📹 YouTube'}
+                            {rec.source === 'article' && '📰 記事'}
+                            {rec.source === 'book' && '📚 書籍'}
+                            {rec.source === 'search' && '🔍 検索'}
+                          </span>
+                        </div>
+                        <h3 className="text-gray-900 font-semibold mb-1">{rec.title}</h3>
+                        {rec.description && (
+                          <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                            {rec.description}
+                          </p>
+                        )}
+                        {rec.reason && (
+                          <p className="text-xs text-gray-500">{rec.reason}</p>
+                        )}
+                      </div>
+                      <svg
+                        className="w-5 h-5 text-blue-600 flex-shrink-0 ml-2"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                        />
+                      </svg>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );

@@ -53,7 +53,19 @@ export interface DailyReport {
   issues: string[];
   tomorrowPlan: string[];
   suggestions: string[];
+  recommendations?: Recommendation[];
   createdAt: string;
+}
+
+export type RecommendationSource = 'youtube' | 'article' | 'book' | 'search';
+
+export interface Recommendation {
+  id: string;
+  title: string;
+  url: string;
+  source: RecommendationSource;
+  description?: string;
+  reason?: string;
 }
 
 // 課題関連

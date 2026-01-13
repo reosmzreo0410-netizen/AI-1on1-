@@ -38,9 +38,16 @@ export default function ReportCard({ report, onViewDetail }: ReportCardProps) {
       </p>
 
       <div className="mt-4 flex items-center justify-between">
-        <span className="text-xs text-gray-400">
-          作成: {new Date(report.createdAt).toLocaleString('ja-JP')}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-gray-400">
+            作成: {new Date(report.createdAt).toLocaleString('ja-JP')}
+          </span>
+          {report.recommendations && report.recommendations.length > 0 && (
+            <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">
+              {report.recommendations.length}件のリソース
+            </span>
+          )}
+        </div>
         <span className="text-blue-600 text-sm font-medium hover:underline">
           詳細を見る →
         </span>

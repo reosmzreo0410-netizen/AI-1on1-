@@ -13,7 +13,8 @@ import {
   getReportGenerationPrompt,
   getIssueExtractionPrompt,
 } from '@/lib/prompts';
-import { DailyReport, Issue, IssueCategory } from '@/types';
+import { generateRecommendations } from '@/lib/recommendations';
+import { DailyReport, Issue, IssueCategory, Recommendation } from '@/types';
 
 function getOpenAI(): OpenAI {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -90,8 +91,6 @@ export async function POST(request: NextRequest) {
       createdAt: new Date().toISOString(),
     };
 
-    await saveReport(report);
-
     // 課題抽出
     const issuePrompt = getIssueExtractionPrompt(
       conversation.messages,
@@ -122,10 +121,39 @@ export async function POST(request: NextRequest) {
           };
           await saveIssue(issue);
         }
+        // レコメンド生成（課題を優先的に活用）
+        try {
+          const recommendations = await generateRecommendations({
+            reportContent: reportContent,
+            issues: issueData.issues,
+          });
+          report.recommendations = recommendations;
+        } catch (recError) {
+          console.error('Failed to generate recommendations:', recError);
+          // エラー時は空配列を設定（フォールバックはgenerateRecommendations内で処理）
+          report.recommendations = [];
+        }
       }
     } catch (e) {
       console.error('Failed to parse issues:', e);
     }
+
+    // 課題抽出結果が空の場合もレポート内容からレコメンドを生成
+    if (!report.recommendations || report.recommendations.length === 0) {
+      try {
+        const recommendations = await generateRecommendations({
+          reportContent: reportContent,
+          issues: [],
+        });
+        report.recommendations = recommendations;
+      } catch (recError) {
+        console.error('Failed to generate recommendations (fallback):', recError);
+        // エラー時は空配列を設定（フォールバックはgenerateRecommendations内で処理）
+        report.recommendations = [];
+      }
+    }
+
+    await saveReport(report);
 
     return NextResponse.json({ success: true, data: report });
   } catch (error) {

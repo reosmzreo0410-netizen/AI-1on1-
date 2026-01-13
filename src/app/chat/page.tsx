@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChatMessage, User } from '@/types';
+import { ChatMessage, Recommendation, User } from '@/types';
 import ChatInterface from '@/components/ChatInterface';
 
 export default function ChatPage() {
@@ -14,6 +14,8 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [reportId, setReportId] = useState<string | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -126,13 +128,27 @@ export default function ChatPage() {
     if (!conversationId) return;
 
     try {
-      await fetch('/api/reports', {
+      const res = await fetch('/api/reports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ conversationId }),
       });
+      const data = await res.json();
+      if (data.success) {
+        setReportId(data.data.id);
+        // レコメンドが存在する場合のみ設定（空配列の場合は設定しない）
+        if (data.data.recommendations && data.data.recommendations.length > 0) {
+          setRecommendations(data.data.recommendations);
+        } else {
+          setRecommendations([]);
+        }
+      } else {
+        console.error('Report generation failed:', data.error);
+        setRecommendations([]);
+      }
     } catch (error) {
       console.error('Failed to generate report:', error);
+      setRecommendations([]);
     }
   };
 
@@ -268,6 +284,8 @@ export default function ChatPage() {
           onSendMessage={sendMessage}
           onEndConversation={endConversation}
           isLoading={isLoading}
+          recommendations={recommendations}
+          reportId={reportId || undefined}
         />
       </div>
     </div>

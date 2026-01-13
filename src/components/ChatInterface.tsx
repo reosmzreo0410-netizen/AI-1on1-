@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { ChatMessage } from '@/types';
+import { ChatMessage, Recommendation } from '@/types';
 
 interface ChatInterfaceProps {
   conversationId: string | null;
@@ -10,6 +10,8 @@ interface ChatInterfaceProps {
   onSendMessage: (message: string) => Promise<void>;
   onEndConversation: () => Promise<void>;
   isLoading: boolean;
+  recommendations?: Recommendation[];
+  reportId?: string;
 }
 
 export default function ChatInterface({
@@ -19,6 +21,8 @@ export default function ChatInterface({
   onSendMessage,
   onEndConversation,
   isLoading,
+  recommendations = [],
+  reportId,
 }: ChatInterfaceProps) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -133,6 +137,46 @@ export default function ChatInterface({
           >
             日報を確認する
           </a>
+          {recommendations.length > 0 && (
+            <div className="mt-4 text-left">
+              <div className="font-semibold text-green-800 mb-2">
+                おすすめリソース（最大3件）
+              </div>
+              <div className="space-y-2">
+                {recommendations.slice(0, 3).map((rec) => (
+                  <a
+                    key={rec.id}
+                    href={rec.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block p-3 rounded-lg bg-white border border-green-100 hover:border-green-300 transition-colors"
+                  >
+                    <div className="text-xs text-green-700 font-semibold">
+                      {rec.source.toUpperCase()}
+                    </div>
+                    <div className="text-gray-900 font-semibold">
+                      {rec.title}
+                    </div>
+                    {rec.description && (
+                      <div className="text-sm text-gray-600 line-clamp-2">
+                        {rec.description}
+                      </div>
+                    )}
+                    {rec.reason && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        {rec.reason}
+                      </div>
+                    )}
+                  </a>
+                ))}
+              </div>
+              {reportId && (
+                <p className="text-xs text-gray-500 mt-2">
+                  レコメンドは最新の日報内容をもとに生成されています (ID: {reportId})
+                </p>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
