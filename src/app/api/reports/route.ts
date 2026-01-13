@@ -142,8 +142,44 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, data: report });
   } catch (error) {
     console.error('Report generation error:', error);
+    const errorMessage = error instanceof Error ? error.message : '日報の生成に失敗しました';
+    
+    // デバッグ情報をログに出力
+    if (errorMessage.includes('No AI providers available') || errorMessage.includes('All AI providers failed')) {
+      console.error('AI Provider Error in Report Generation:', {
+        errorMessage,
+        fullError: error,
+        envCheck: {
+          OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
+          GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
+          ANTHROPIC_API_KEY: !!process.env.ANTHROPIC_API_KEY,
+        },
+        nodeEnv: process.env.NODE_ENV,
+      });
+    }
+    
+    if (errorMessage.includes('API key is not set') || errorMessage.includes('No AI providers available')) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'AIプロバイダーのAPIキーが設定されていません。OPENAI_API_KEY、GEMINI_API_KEY、ANTHROPIC_API_KEYのいずれかをVercelの環境変数に設定してください。環境変数を設定した後は、必ず新しいデプロイを実行してください。' 
+        },
+        { status: 500 }
+      );
+    }
+    
+    if (errorMessage.includes('All AI providers failed')) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'すべてのAIプロバイダーでエラーが発生しました。Vercelのログを確認してください。環境変数（OPENAI_API_KEY、GEMINI_API_KEY、ANTHROPIC_API_KEY）が正しく設定されているか、また「All Environments」に設定されているか確認してください。' 
+        },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
-      { success: false, error: '日報の生成に失敗しました' },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }
