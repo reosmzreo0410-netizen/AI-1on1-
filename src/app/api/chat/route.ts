@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getCurrentUser } from '@/lib/auth';
-import { getSettings, saveConversation, getConversation } from '@/lib/storage';
-import { getSystemPrompt } from '@/lib/prompts';
+import { saveConversation, getConversation, getReportsByUser } from '@/lib/storage';
+import { getCoachingSystemPrompt } from '@/lib/prompts';
 import { Conversation, ChatMessage } from '@/types';
 
 function getOpenAI(): OpenAI {
@@ -28,8 +28,13 @@ export async function POST(request: NextRequest) {
 
     // 新規会話開始
     if (action === 'start') {
-      const settings = await getSettings();
-      const systemPrompt = getSystemPrompt(settings.questionFlow);
+      // 過去のレポートから文脈を取得（直近3件）
+      const previousReports = await getReportsByUser(user.id);
+      const previousSummaries = previousReports.slice(0, 3).map((report) => {
+        return `[${report.date}] ${report.content.substring(0, 200)}...`;
+      });
+
+      const systemPrompt = getCoachingSystemPrompt(user.name, previousSummaries);
       const now = new Date();
 
       const conversation: Conversation = {
@@ -57,6 +62,7 @@ export async function POST(request: NextRequest) {
       const response = await openai.chat.completions.create({
         model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
         messages: aiMessages,
+        temperature: 0.8, // コーチングでは少し創造的な回答を
       });
 
       const aiResponse = response.choices[0]?.message?.content || '';
@@ -114,6 +120,7 @@ export async function POST(request: NextRequest) {
       const response = await openai.chat.completions.create({
         model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
         messages: aiMessages,
+        temperature: 0.8,
       });
 
       const aiResponse = response.choices[0]?.message?.content || '';
@@ -124,15 +131,6 @@ export async function POST(request: NextRequest) {
         timestamp: new Date().toISOString(),
       };
       conversation.messages.push(assistantMessage);
-
-      // 終了チェック
-      if (
-        aiResponse.includes('1on1はこれで終了') ||
-        aiResponse.includes('本日の1on1')
-      ) {
-        conversation.status = 'completed';
-        conversation.completedAt = new Date().toISOString();
-      }
 
       await saveConversation(conversation);
 

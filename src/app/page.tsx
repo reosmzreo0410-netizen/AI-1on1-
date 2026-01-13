@@ -45,15 +45,15 @@ export default function HomePage() {
       router.refresh();
       window.location.reload();
     } else {
-      setLoginError('IDが見つかりません');
+      setLoginError('IDが見つかりません。管理者にお問い合わせください。');
       setIsLoggingIn(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">読み込み中...</div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+        <div className="text-lg text-gray-600">読み込み中...</div>
       </div>
     );
   }
@@ -61,64 +61,95 @@ export default function HomePage() {
   // ログイン済みの場合
   if (currentUser) {
     return (
-      <div className="max-w-4xl mx-auto py-12 px-4">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">
-            AI 1on1 コーチング
-          </h1>
-          <p className="text-xl text-gray-600">
-            ようこそ、{currentUser.name}さん
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          <a
-            href="/chat"
-            className="block p-8 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow border-l-4 border-blue-500"
-          >
-            <h2 className="text-2xl font-bold text-gray-800 mb-3">
-              1on1を始める
-            </h2>
-            <p className="text-gray-600">
-              AIコーチと1on1を行い、今日の振り返りや目標について対話しましょう。
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+        <div className="max-w-4xl mx-auto py-12 px-4">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold text-gray-800 mb-4">
+              AIコーチング
+            </h1>
+            <p className="text-xl text-gray-600">
+              こんにちは、{currentUser.name}さん
             </p>
-          </a>
+          </div>
 
-          <a
-            href="/reports"
-            className="block p-8 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow border-l-4 border-green-500"
-          >
-            <h2 className="text-2xl font-bold text-gray-800 mb-3">日報一覧</h2>
-            <p className="text-gray-600">
-              過去の日報を確認できます。
-            </p>
-          </a>
-
-          {currentUser.role === 'admin' && (
-            <>
-              <a
-                href="/issues"
-                className="block p-8 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow border-l-4 border-orange-500"
-              >
-                <h2 className="text-2xl font-bold text-gray-800 mb-3">
-                  課題ダッシュボード
+          <div className="grid md:grid-cols-2 gap-6">
+            <a
+              href="/chat"
+              className="group block p-8 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all border-l-4 border-blue-500 hover:translate-y-[-2px]"
+            >
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                  <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800">
+                  コーチングを始める
                 </h2>
-                <p className="text-gray-600">
-                  チーム全体の課題を可視化・分析します。
-                </p>
-              </a>
+              </div>
+              <p className="text-gray-600">
+                AIコーチと一緒に今日の振り返りをしましょう。
+                気づきや改善点を見つけるお手伝いをします。
+              </p>
+            </a>
 
-              <a
-                href="/settings"
-                className="block p-8 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow border-l-4 border-purple-500"
-              >
-                <h2 className="text-2xl font-bold text-gray-800 mb-3">設定</h2>
-                <p className="text-gray-600">
-                  質問項目やメンバーを管理します。
-                </p>
-              </a>
-            </>
-          )}
+            <a
+              href="/reports"
+              className="group block p-8 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all border-l-4 border-green-500 hover:translate-y-[-2px]"
+            >
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center group-hover:bg-green-200 transition-colors">
+                  <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800">レポート一覧</h2>
+              </div>
+              <p className="text-gray-600">
+                過去のコーチングセッションのレポートを確認できます。
+              </p>
+            </a>
+
+            {currentUser.role === 'admin' && (
+              <>
+                <a
+                  href="/issues"
+                  className="group block p-8 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all border-l-4 border-orange-500 hover:translate-y-[-2px]"
+                >
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center group-hover:bg-orange-200 transition-colors">
+                      <svg className="w-6 h-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-800">
+                      課題ダッシュボード
+                    </h2>
+                  </div>
+                  <p className="text-gray-600">
+                    チーム全体の課題を可視化・分析します。
+                  </p>
+                </a>
+
+                <a
+                  href="/settings"
+                  className="group block p-8 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all border-l-4 border-purple-500 hover:translate-y-[-2px]"
+                >
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                      <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-800">メンバー管理</h2>
+                  </div>
+                  <p className="text-gray-600">
+                    メンバーの追加・削除、ログイン情報の発行ができます。
+                  </p>
+                </a>
+              </>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -126,18 +157,38 @@ export default function HomePage() {
 
   // 未ログインの場合：ログイン画面
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       <div className="max-w-md w-full mx-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 border border-gray-100">
           <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 mb-6 shadow-lg">
+              <svg
+                className="w-10 h-10 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                />
+              </svg>
+            </div>
             <h1 className="text-3xl font-bold text-gray-800 mb-2">
-              AI 1on1 コーチング
+              AIコーチング
             </h1>
-            <p className="text-gray-600">あなたのIDを入力してください</p>
+            <p className="text-gray-500">
+              あなたのIDでログインしてください
+            </p>
           </div>
 
-          <form onSubmit={handleIdLogin} className="space-y-4">
+          <form onSubmit={handleIdLogin} className="space-y-5">
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                ログインID
+              </label>
               <input
                 type="text"
                 value={inputId}
@@ -145,24 +196,54 @@ export default function HomePage() {
                   setInputId(e.target.value);
                   setLoginError('');
                 }}
-                placeholder="あなたのID"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                placeholder="管理者から発行されたIDを入力"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg bg-gray-50 hover:bg-white transition-colors"
                 disabled={isLoggingIn}
               />
             </div>
 
             {loginError && (
-              <p className="text-red-500 text-sm text-center">{loginError}</p>
+              <div className="p-3 bg-red-50 border border-red-100 rounded-lg">
+                <p className="text-red-600 text-sm">{loginError}</p>
+              </div>
             )}
 
             <button
               type="submit"
               disabled={isLoggingIn}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
             >
-              {isLoggingIn ? 'ログイン中...' : 'ログイン'}
+              {isLoggingIn ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  ログイン中...
+                </span>
+              ) : (
+                'ログイン'
+              )}
             </button>
           </form>
+
+          <div className="mt-8 pt-6 border-t border-gray-100">
+            <p className="text-center text-sm text-gray-500">
+              IDをお持ちでない方は管理者にお問い合わせください
+            </p>
+          </div>
         </div>
       </div>
     </div>

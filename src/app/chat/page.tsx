@@ -53,7 +53,7 @@ export default function ChatPage() {
           },
         ]);
       } else {
-        setError(data.error || '1on1の開始に失敗しました。OpenAI APIキーが正しく設定されているか確認してください。');
+        setError(data.error || 'セッションの開始に失敗しました。OpenAI APIキーが正しく設定されているか確認してください。');
       }
     } catch (err) {
       console.error('Failed to start conversation:', err);
@@ -93,12 +93,6 @@ export default function ChatPage() {
           timestamp: new Date().toISOString(),
         };
         setMessages((prev) => [...prev, aiMessage]);
-
-        if (data.data.status === 'completed') {
-          setStatus('completed');
-          // 日報生成をトリガー
-          await generateReport();
-        }
       }
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -154,30 +148,88 @@ export default function ChatPage() {
   if (!conversationId) {
     return (
       <div className="max-w-2xl mx-auto py-12 px-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">1on1を始める</h1>
-          <p className="text-gray-600 mb-8">
-            AIと1on1を行い、今日の業務内容や課題を共有しましょう。
-            <br />
-            会話が終わると、自動的に日報が生成されます。
-          </p>
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 mb-6">
+              <svg
+                className="w-10 h-10 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-800 mb-3">
+              AIコーチング
+            </h1>
+            <p className="text-gray-600 text-lg">
+              今日の振り返りを一緒にしましょう
+            </p>
+          </div>
+
+          <div className="bg-blue-50 rounded-xl p-6 mb-8">
+            <h2 className="font-semibold text-blue-800 mb-3">💡 このセッションでできること</h2>
+            <ul className="space-y-2 text-blue-700">
+              <li className="flex items-start gap-2">
+                <span className="text-blue-500">•</span>
+                今日一日の振り返りと内省
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-500">•</span>
+                うまくいったことの発見と言語化
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-500">•</span>
+                課題やモヤモヤの整理
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-500">•</span>
+                明日への小さな一歩を見つける
+              </li>
+            </ul>
+          </div>
 
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
               <p className="font-medium mb-2">エラーが発生しました</p>
               <p className="text-sm">{error}</p>
-              <p className="text-xs mt-2 text-red-500">
-                .env.local ファイルで OPENAI_API_KEY を設定してください
-              </p>
             </div>
           )}
 
           <button
             onClick={startConversation}
             disabled={isLoading}
-            className="px-8 py-4 bg-blue-600 text-white text-lg font-medium rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-lg font-medium rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all disabled:opacity-50 shadow-lg hover:shadow-xl"
           >
-            {isLoading ? '開始中...' : '1on1を開始する'}
+            {isLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                準備中...
+              </span>
+            ) : (
+              'コーチングを始める'
+            )}
           </button>
         </div>
       </div>
@@ -187,17 +239,25 @@ export default function ChatPage() {
   // 会話中
   return (
     <div className="max-w-3xl mx-auto py-6 px-4">
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold text-gray-800">
-          1on1 - {user?.name}
-        </h1>
-        <p className="text-gray-500">
-          {new Date().toLocaleDateString('ja-JP', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          })}
-        </p>
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">
+            コーチングセッション
+          </h1>
+          <p className="text-gray-500">
+            {user?.name}さん • {new Date().toLocaleDateString('ja-JP', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })}
+          </p>
+        </div>
+        {status === 'in_progress' && (
+          <div className="flex items-center gap-2 text-green-600">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            セッション中
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
