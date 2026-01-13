@@ -120,3 +120,79 @@ ${conversation}
 - skills: スキル、研修、成長
 - other: その他`;
 }
+
+export function getRecommendationQueryPrompt(
+  reportContent: string,
+  issues: Array<{ content: string; category: string; severity: string }>
+): string {
+  const issuesText = issues.length > 0
+    ? issues.map((i) => `- ${i.content} (${i.category}, ${i.severity})`).join('\n')
+    : 'なし';
+
+  return `以下の日報内容と課題を分析し、課題解決に最も効果的なリソースを検索するための最適な検索クエリを3つ生成してください。
+
+【日報内容】
+${reportContent.slice(0, 1000)}
+
+【抽出された課題】
+${issuesText}
+
+以下のJSON形式で、検索クエリを返してください。各クエリは具体的で、実際に検索して有用なリソースが見つかるようなものにしてください：
+
+{
+  "queries": [
+    "検索クエリ1（YouTube動画検索用）",
+    "検索クエリ2（ウェブ記事検索用）",
+    "検索クエリ3（書籍検索用）"
+  ],
+  "focus": "この日報の主な焦点・テーマ（1文で）"
+}
+
+検索クエリの作成方針：
+- 課題の核心を捉えた具体的なキーワードを含める
+- 解決方法やベストプラクティスを探すようなクエリにする
+- 日本語で記述する
+- 各クエリは異なる角度からアプローチする（例：理論、実践、事例）`;
+}
+
+export function getRecommendationEvaluationPrompt(
+  reportContent: string,
+  issues: Array<{ content: string }>,
+  candidates: Array<{ title: string; description?: string; url: string; source: string }>
+): string {
+  const issuesText = issues.length > 0
+    ? issues.map((i) => `- ${i.content}`).join('\n')
+    : 'なし';
+
+  const candidatesText = candidates.map((c, idx) => 
+    `${idx + 1}. [${c.source}] ${c.title}\n   ${c.description || '説明なし'}\n   ${c.url}`
+  ).join('\n\n');
+
+  return `以下の日報内容と課題に対して、提示されたリソース候補から最も関連性が高く、課題解決に役立つ3つを厳選してください。
+
+【日報内容】
+${reportContent.slice(0, 800)}
+
+【課題】
+${issuesText}
+
+【リソース候補】
+${candidatesText}
+
+以下のJSON形式で、選んだ3つのリソースを返してください：
+
+{
+  "selected": [
+    {
+      "index": 候補の番号（1始まり）,
+      "reason": "なぜこのリソースが選ばれたか、課題解決にどう役立つか（2-3文で具体的に）"
+    }
+  ]
+}
+
+選定基準：
+- 日報の内容や課題と直接関連している
+- 実践的で具体的な解決策が得られる
+- 信頼性が高そうなソース（YouTube、記事、書籍）
+- 多様性（同じタイプのリソースばかりにならない）`;
+}

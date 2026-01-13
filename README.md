@@ -68,11 +68,25 @@ npm run dev
 1. [Google Cloud Console](https://console.cloud.google.com/)にアクセス
 2. 「APIとサービス」→「ライブラリ」から「Custom Search API」を有効化
 3. 「認証情報」からAPIキーを作成
-4. [Custom Search Engine](https://programmablesearchengine.google.com/)で検索エンジンを作成し、検索エンジンID（CSE ID）を取得
+4. [Custom Search Engine](https://programmablesearchengine.google.com/)で検索エンジンを作成
+   - 「検索するサイトを追加」で「ウェブ全体を検索」を選択
+   - 検索エンジンID（CSE ID）をコピー
+5. `.env.local`に`GOOGLE_API_KEY`と`GOOGLE_CSE_ID`を設定
 
 ### Google Books API（オプション）
-- Google Custom Search APIと同じAPIキーを使用できます
+- Google Custom Search APIと同じ`GOOGLE_API_KEY`を使用できます
 - 追加の設定は不要です
+
+## レコメンド機能について
+
+レコメンド機能は、日報の内容と抽出された課題を分析し、以下の手順で最適なリソースを3つ厳選します：
+
+1. **AIによる検索クエリ生成**: OpenAI APIを使って、日報と課題から最適な検索クエリを生成
+2. **並列検索**: YouTube、ウェブ検索、書籍APIから同時にリソースを検索
+3. **AIによる評価**: 検索結果をAIで評価し、課題解決に最も役立つ3つを厳選
+4. **レコメンド表示**: 選ばれた理由と共に表示
+
+**注意**: 外部APIキー（YouTube/Google Custom Search/Google Books）が設定されていない場合でも、検索リンクが表示されます。APIキーを設定すると、実際の動画・記事・書籍が自動的にレコメンドされます。
 
 ## デプロイ
 
