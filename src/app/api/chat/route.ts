@@ -1,27 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
 import { getCurrentUser } from '@/lib/auth';
 import { saveConversation, getConversation, getReportsByUser } from '@/lib/storage';
 import { getCoachingSystemPrompt } from '@/lib/prompts';
+import { chatCompletion } from '@/lib/ai-providers';
 import { Conversation, ChatMessage } from '@/types';
-
-function getOpenAI(): OpenAI {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    throw new Error('OPENAI_API_KEY is not set');
-  }
-  return new OpenAI({ apiKey });
-}
-
-const getModel = () => {
-  const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
-  const validModels = ['gpt-4o-mini', 'gpt-4o', 'gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo'];
-  if (!validModels.includes(model)) {
-    console.warn(`Invalid OPENAI_MODEL specified: ${model}. Falling back to gpt-4o-mini.`);
-    return 'gpt-4o-mini';
-  }
-  return model;
-};
 
 // 会話開始
 export async function POST(request: NextRequest) {
@@ -63,18 +45,13 @@ export async function POST(request: NextRequest) {
         createdAt: now.toISOString(),
       };
 
-      // 最初のAI応答を生成
-      const aiMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-        { role: 'system', content: systemPrompt },
-      ];
+      // 最初のAI応答を生成（複数プロバイダー対応）
+      const result = await chatCompletion(
+        [{ role: 'system', content: systemPrompt }],
+        { temperature: 0.7 }
+      );
 
-      const openai = getOpenAI();
-      const response = await openai.chat.completions.create({
-        model: getModel(),
-        messages: aiMessages,
-      });
-
-      const aiResponse = response.choices[0]?.message?.content || '';
+      const aiResponse = result.content;
 
       conversation.messages.push({
         role: 'assistant',
@@ -118,20 +95,14 @@ export async function POST(request: NextRequest) {
       };
       conversation.messages.push(userMessage);
 
-      // AI応答を生成
-      const aiMessages: OpenAI.Chat.ChatCompletionMessageParam[] =
-        conversation.messages.map((m) => ({
-          role: m.role as 'system' | 'user' | 'assistant',
-          content: m.content,
-        }));
+      // AI応答を生成（複数プロバイダー対応）
+      const aiMessages = conversation.messages.map((m) => ({
+        role: m.role as 'system' | 'user' | 'assistant',
+        content: m.content,
+      }));
 
-      const openai = getOpenAI();
-      const response = await openai.chat.completions.create({
-        model: getModel(),
-        messages: aiMessages,
-      });
-
-      const aiResponse = response.choices[0]?.message?.content || '';
+      const result = await chatCompletion(aiMessages, { temperature: 0.7 });
+      const aiResponse = result.content;
 
       const assistantMessage: ChatMessage = {
         role: 'assistant',
@@ -188,34 +159,28 @@ export async function POST(request: NextRequest) {
     console.error('Chat error:', error);
     const errorMessage = error instanceof Error ? error.message : 'チャットエラーが発生しました';
     
-    if (errorMessage.includes('OPENAI_API_KEY')) {
-      return NextResponse.json(
-        { success: false, error: '.env.local ファイルで OPENAI_API_KEY を設定してください' },
-        { status: 500 }
-      );
-    }
-    if (errorMessage.includes('invalid model ID')) {
-      return NextResponse.json(
-        { success: false, error: 'OpenAIモデルIDが無効です。環境変数 OPENAI_MODEL を確認してください。' },
-        { status: 400 }
-      );
-    }
-    // レート制限エラー（RPM/TPM）の検出
-    if (errorMessage.includes('Rate limit') || errorMessage.includes('requests per min (RPM)') || errorMessage.includes('tokens per min (TPM)')) {
-      const rateLimitType = errorMessage.includes('RPM') ? 'リクエスト数' : 
-                           errorMessage.includes('TPM') ? 'トークン数' : 'レート';
-      // 待機時間を抽出（例: "Please try again in 20s"）
-      const waitTimeMatch = errorMessage.match(/try again in (\d+[smh])/i);
-      const waitTime = waitTimeMatch ? waitTimeMatch[1] : 'しばらく';
-      
+    // すべてのプロバイダーが失敗した場合
+    if (errorMessage.includes('All AI providers failed')) {
       return NextResponse.json(
         { 
           success: false, 
-          error: `OpenAI APIの${rateLimitType}制限に達しました。${waitTime}待ってから再度お試しください。リコメンド機能は自動的にフォールバックモードで動作します。` 
+          error: 'すべてのAIプロバイダーでエラーが発生しました。環境変数を確認してください（OPENAI_API_KEY、GEMINI_API_KEY、ANTHROPIC_API_KEYのいずれかが必要です）。' 
         },
-        { status: 429 }
+        { status: 500 }
       );
     }
+    
+    // APIキーが設定されていない場合
+    if (errorMessage.includes('API key is not set') || errorMessage.includes('API_KEY')) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'AIプロバイダーのAPIキーが設定されていません。OPENAI_API_KEY、GEMINI_API_KEY、ANTHROPIC_API_KEYのいずれかを設定してください。' 
+        },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
       { success: false, error: errorMessage },
       { status: 500 }

@@ -22,9 +22,23 @@ npm install
 `.env.local`ファイルを作成し、以下の環境変数を設定してください：
 
 ```bash
-# 必須: OpenAI API設定
+# AIプロバイダー設定（少なくとも1つは必須）
+# 複数のプロバイダーを設定すると、レート制限時に自動的にフォールバックします
+
+# OpenAI（推奨）
 OPENAI_API_KEY=your_openai_api_key_here
 OPENAI_MODEL=gpt-4o-mini
+
+# Google Gemini（オプション）
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-1.5-flash
+
+# Anthropic Claude（オプション）
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+CLAUDE_MODEL=claude-3-5-sonnet-20241022
+
+# プロバイダーの優先順位（オプション、デフォルト: openai,gemini,claude）
+AI_PROVIDER_PRIORITY=openai,gemini,claude
 
 # Vercel KV設定（Vercelデプロイ時は自動設定されます）
 KV_REST_API_URL=
@@ -54,9 +68,27 @@ npm run dev
 
 ## APIキーの取得方法
 
-### OpenAI API Key
+### AIプロバイダーAPIキー（少なくとも1つは必須）
+
+#### OpenAI API Key（推奨）
 1. [OpenAI Platform](https://platform.openai.com/)にアクセス
 2. API Keysセクションで新しいキーを作成
+3. `.env.local`に`OPENAI_API_KEY`を設定
+
+#### Google Gemini API Key（オプション）
+1. [Google AI Studio](https://makersuite.google.com/app/apikey)にアクセス
+2. 「Create API Key」をクリックしてキーを作成
+3. `.env.local`に`GEMINI_API_KEY`を設定
+
+#### Anthropic Claude API Key（オプション）
+1. [Anthropic Console](https://console.anthropic.com/)にアクセス
+2. 「API Keys」セクションで新しいキーを作成
+3. `.env.local`に`ANTHROPIC_API_KEY`を設定
+
+**複数プロバイダーの利点**:
+- レート制限に達した場合、自動的に次のプロバイダーにフォールバック
+- プロバイダーの障害時にもサービスを継続
+- コスト分散が可能
 
 ### YouTube Data API v3（オプション）
 1. [Google Cloud Console](https://console.cloud.google.com/)にアクセス
@@ -79,14 +111,16 @@ npm run dev
 
 ## レコメンド機能について
 
-レコメンド機能は、日報の内容と抽出された課題を分析し、以下の手順で最適なリソースを3つ厳選します：
+レコメンド機能は、日報の内容と抽出された課題を分析し、以下の手順で最適なリソースを5つ厳選します：
 
-1. **AIによる検索クエリ生成**: OpenAI APIを使って、日報と課題から最適な検索クエリを生成
+1. **AIによる検索クエリ生成**: 設定されたAIプロバイダー（OpenAI/Gemini/Claude）を使って、日報と課題から最適な検索クエリを生成
 2. **並列検索**: YouTube、ウェブ検索、書籍APIから同時にリソースを検索
-3. **AIによる評価**: 検索結果をAIで評価し、課題解決に最も役立つ3つを厳選
+3. **AIによる評価**: 検索結果をAIで評価し、課題解決に最も役立つ5つを厳選
 4. **レコメンド表示**: 選ばれた理由と共に表示
 
-**注意**: 外部APIキー（YouTube/Google Custom Search/Google Books）が設定されていない場合でも、検索リンクが表示されます。APIキーを設定すると、実際の動画・記事・書籍が自動的にレコメンドされます。
+**注意**: 
+- 外部APIキー（YouTube/Google Custom Search/Google Books）が設定されていない場合でも、検索リンクが表示されます。APIキーを設定すると、実際の動画・記事・書籍が自動的にレコメンドされます。
+- AIプロバイダーがレート制限に達した場合、自動的に次のプロバイダーにフォールバックします。すべてのプロバイダーが失敗した場合は、キーワードベースのフォールバック機能が動作します。
 
 ## デプロイ
 
@@ -113,7 +147,7 @@ npm run dev
 - **言語**: TypeScript
 - **スタイリング**: Tailwind CSS
 - **データベース**: Vercel KV (Redis)
-- **AI**: OpenAI API
+- **AI**: OpenAI API / Google Gemini API / Anthropic Claude API（複数プロバイダー対応、自動フォールバック）
 - **レコメンド**: YouTube Data API, Google Custom Search API, Google Books API
 
 ## ライセンス

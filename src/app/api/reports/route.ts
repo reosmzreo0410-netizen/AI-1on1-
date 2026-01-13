@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
 import { getCurrentUser, isAdmin } from '@/lib/auth';
 import {
   getConversation,
@@ -15,24 +14,8 @@ import {
   getIssueExtractionPrompt,
 } from '@/lib/prompts';
 import { generateRecommendations } from '@/lib/recommendations';
+import { chatCompletion } from '@/lib/ai-providers';
 import { DailyReport, Issue, IssueCategory, Recommendation } from '@/types';
-
-function getOpenAI(): OpenAI {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    throw new Error('OPENAI_API_KEY is not set');
-  }
-  return new OpenAI({ apiKey });
-}
-
-function getModel(): string {
-  const model = process.env.OPENAI_MODEL;
-  const validModels = ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'];
-  if (model && validModels.includes(model)) {
-    return model;
-  }
-  return 'gpt-4o-mini';
-}
 
 // 日報生成
 export async function POST(request: NextRequest) {
@@ -62,20 +45,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const openai = getOpenAI();
-
-    // 日報生成
+    // 日報生成（複数プロバイダー対応）
     const reportPrompt = getReportGenerationPrompt(
       conversation.messages,
       user.name
     );
 
-    const reportResponse = await openai.chat.completions.create({
-      model: getModel(),
-      messages: [{ role: 'user', content: reportPrompt }],
-    });
+    const reportResult = await chatCompletion(
+      [{ role: 'user', content: reportPrompt }],
+      { temperature: 0.7 }
+    );
 
-    const reportContent = reportResponse.choices[0]?.message?.content || '';
+    const reportContent = reportResult.content;
 
     const report: DailyReport = {
       id: `report_${Date.now()}`,
@@ -92,20 +73,22 @@ export async function POST(request: NextRequest) {
       createdAt: new Date().toISOString(),
     };
 
-    // 課題抽出
+    // 課題抽出（複数プロバイダー対応）
     const issuePrompt = getIssueExtractionPrompt(
       conversation.messages,
       user.name
     );
 
-    const issueResponse = await openai.chat.completions.create({
-      model: getModel(),
-      messages: [{ role: 'user', content: issuePrompt }],
-    });
-
-    const issueContent = issueResponse.choices[0]?.message?.content || '';
-
     try {
+      const issueResult = await chatCompletion(
+        [{ role: 'user', content: issuePrompt }],
+        { 
+          temperature: 0.3,
+          responseFormat: { type: 'json_object' }
+        }
+      );
+
+      const issueContent = issueResult.content;
       const issueData = JSON.parse(issueContent);
       if (issueData.issues && Array.isArray(issueData.issues)) {
         for (const item of issueData.issues) {

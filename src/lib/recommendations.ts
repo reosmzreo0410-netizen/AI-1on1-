@@ -1,5 +1,5 @@
 import { Recommendation } from '@/types';
-import OpenAI from 'openai';
+import { chatCompletion } from './ai-providers';
 import { getRecommendationQueryPrompt, getRecommendationEvaluationPrompt } from './prompts';
 
 type IssueInput = { content: string; category?: string; severity?: string };
@@ -7,60 +7,40 @@ type IssueInput = { content: string; category?: string; severity?: string };
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const GOOGLE_CSE_ID = process.env.GOOGLE_CSE_ID;
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-function getOpenAI(): OpenAI | null {
-  if (!OPENAI_API_KEY) return null;
-  return new OpenAI({ apiKey: OPENAI_API_KEY });
-}
-
-function getModel(): string {
-  const model = process.env.OPENAI_MODEL;
-  const validModels = ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'];
-  if (model && validModels.includes(model)) {
-    return model;
-  }
-  return 'gpt-4o-mini';
-}
-
-// OpenAI APIを使って最適な検索クエリを生成
+// AI APIを使って最適な検索クエリを生成（複数プロバイダー対応）
 async function buildQueriesWithAI(
   reportContent: string,
   issues: Array<{ content: string; category?: string; severity?: string }>
 ): Promise<string[]> {
-  const openai = getOpenAI();
-  if (!openai) {
-    return buildQueriesFallback(reportContent, issues);
-  }
-
   try {
     const prompt = getRecommendationQueryPrompt(reportContent, issues);
-    const response = await openai.chat.completions.create({
-      model: getModel(),
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-      response_format: { type: 'json_object' },
-    });
+    const result = await chatCompletion(
+      [{ role: 'user', content: prompt }],
+      {
+        temperature: 0.7,
+        responseFormat: { type: 'json_object' },
+      }
+    );
 
-    const content = response.choices[0]?.message?.content || '';
-    const parsed = JSON.parse(content);
+    const parsed = JSON.parse(result.content);
     
     if (parsed.queries && Array.isArray(parsed.queries)) {
+      console.log(`Generated queries using ${result.provider}`);
       return parsed.queries.slice(0, 5);
     }
   } catch (error: any) {
-    // レート制限エラー（TPM/RPM）の場合はフォールバックを使用
+    // レート制限エラーやその他のエラーの場合はフォールバックを使用
     const errorMessage = error?.message || '';
     const isRateLimitError = 
       error?.status === 429 || 
       errorMessage.includes('Rate limit') ||
       errorMessage.includes('requests per min (RPM)') ||
-      errorMessage.includes('tokens per min (TPM)');
+      errorMessage.includes('tokens per min (TPM)') ||
+      errorMessage.includes('All AI providers failed');
     
     if (isRateLimitError) {
-      const rateLimitType = errorMessage.includes('RPM') ? 'RPM' : 
-                           errorMessage.includes('TPM') ? 'TPM' : 'Rate limit';
-      console.warn(`OpenAI API ${rateLimitType} rate limit reached, using fallback queries`);
+      console.warn(`AI API rate limit reached, using fallback queries`);
       return buildQueriesFallback(reportContent, issues);
     }
     console.error('Failed to generate queries with AI:', error);
@@ -361,16 +341,14 @@ function balanceSources(recs: Recommendation[]): Recommendation[] {
   return result.slice(0, 5); // 最大5件を返す
 }
 
-// AIを使って検索結果を評価し、最適な5つを選ぶ
+// AIを使って検索結果を評価し、最適な5つを選ぶ（複数プロバイダー対応）
 async function evaluateAndSelectRecommendations(
   reportContent: string,
   issues: Array<{ content: string; category?: string; severity?: string }>,
   candidates: Recommendation[]
 ): Promise<Recommendation[]> {
-  const openai = getOpenAI();
-  if (!openai || candidates.length === 0) {
-    const balanced = balanceSources(candidates);
-    return balanced.slice(0, 5);
+  if (candidates.length === 0) {
+    return [];
   }
 
   // 候補が5つ以下の場合はそのまま返す
@@ -390,15 +368,16 @@ async function evaluateAndSelectRecommendations(
       }))
     );
 
-    const response = await openai.chat.completions.create({
-      model: getModel(),
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.3,
-      response_format: { type: 'json_object' },
-    });
+    const result = await chatCompletion(
+      [{ role: 'user', content: prompt }],
+      {
+        temperature: 0.3,
+        responseFormat: { type: 'json_object' },
+      }
+    );
 
-    const content = response.choices[0]?.message?.content || '';
-    const parsed = JSON.parse(content);
+    const parsed = JSON.parse(result.content);
+    console.log(`Evaluated recommendations using ${result.provider}`);
     
     if (parsed.selected && Array.isArray(parsed.selected)) {
       const selected = parsed.selected
