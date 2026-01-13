@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getCurrentUser } from '@/lib/auth';
-import { getSettings, saveConversation, getConversation } from '@/lib/storage';
-import { getSystemPrompt } from '@/lib/prompts';
+import { saveConversation, getConversation, getReportsByUser } from '@/lib/storage';
+import { getCoachingSystemPrompt } from '@/lib/prompts';
 import { Conversation, ChatMessage } from '@/types';
 
 function getOpenAI(): OpenAI {
@@ -12,6 +12,16 @@ function getOpenAI(): OpenAI {
   }
   return new OpenAI({ apiKey });
 }
+
+const getModel = () => {
+  const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+  const validModels = ['gpt-4o-mini', 'gpt-4o', 'gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo'];
+  if (!validModels.includes(model)) {
+    console.warn(`Invalid OPENAI_MODEL specified: ${model}. Falling back to gpt-4o-mini.`);
+    return 'gpt-4o-mini';
+  }
+  return model;
+};
 
 // 会話開始
 export async function POST(request: NextRequest) {
@@ -28,8 +38,14 @@ export async function POST(request: NextRequest) {
 
     // 新規会話開始
     if (action === 'start') {
-      const settings = await getSettings();
-      const systemPrompt = getSystemPrompt(settings.questionFlow);
+      // 過去のレポートを取得し、要約を生成
+      const recentReports = await getReportsByUser(user.id);
+      const recentReportsSummary = recentReports
+        .slice(0, 3) // 最新3件のレポートを対象
+        .map((report) => `日付: ${report.date}\n内容の要約: ${report.content.substring(0, 100)}...`) // 簡潔な要約
+        .join('\n\n');
+
+      const systemPrompt = getCoachingSystemPrompt(user.name, recentReportsSummary);
       const now = new Date();
 
       const conversation: Conversation = {
@@ -125,14 +141,7 @@ export async function POST(request: NextRequest) {
       };
       conversation.messages.push(assistantMessage);
 
-      // 終了チェック
-      if (
-        aiResponse.includes('1on1はこれで終了') ||
-        aiResponse.includes('本日の1on1')
-      ) {
-        conversation.status = 'completed';
-        conversation.completedAt = new Date().toISOString();
-      }
+      // 終了チェック（コーチングスタイルでは自動終了しない）
 
       await saveConversation(conversation);
 
@@ -183,6 +192,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: '.env.local ファイルで OPENAI_API_KEY を設定してください' },
         { status: 500 }
+      );
+    }
+    if (errorMessage.includes('invalid model ID')) {
+      return NextResponse.json(
+        { success: false, error: 'OpenAIモデルIDが無効です。環境変数 OPENAI_MODEL を確認してください。' },
+        { status: 400 }
       );
     }
     return NextResponse.json(
