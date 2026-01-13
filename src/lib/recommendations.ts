@@ -48,36 +48,87 @@ async function buildQueriesWithAI(
     if (parsed.queries && Array.isArray(parsed.queries)) {
       return parsed.queries.slice(0, 5);
     }
-  } catch (error) {
+  } catch (error: any) {
+    // レート制限エラーの場合はフォールバックを使用
+    if (error?.message?.includes('Rate limit') || error?.status === 429) {
+      console.warn('OpenAI API rate limit reached, using fallback queries');
+      return buildQueriesFallback(reportContent, issues);
+    }
     console.error('Failed to generate queries with AI:', error);
   }
 
   return buildQueriesFallback(reportContent, issues);
 }
 
-// フォールバック: 簡易的にクエリを作成
+// フォールバック: 課題から直接検索クエリを作成（AIを使わない）
 function buildQueriesFallback(
   reportContent: string,
   issues: Array<{ content: string; category?: string; severity?: string }>
 ): string[] {
-  const issueTexts = issues
-    .map((item) => item.content)
-    .filter(Boolean)
-    .slice(0, 5);
-
-  const condensedReport = reportContent.slice(0, 400);
   const queries: string[] = [];
+  
+  // 重要度の高い課題を優先
+  const highPriorityIssues = issues
+    .filter(i => i.severity === 'high' || i.severity === 'critical')
+    .map(i => i.content);
+  
+  const mediumPriorityIssues = issues
+    .filter(i => i.severity === 'medium' || !i.severity)
+    .map(i => i.content);
+  
+  const allIssues = [...highPriorityIssues, ...mediumPriorityIssues].slice(0, 5);
 
-  if (issueTexts.length > 0) {
-    issueTexts.forEach((issue, idx) => {
-      if (idx < 3) {
-        queries.push(`${issue} 解決方法`);
+  // 課題から直接検索クエリを生成
+  if (allIssues.length > 0) {
+    allIssues.forEach((issue, idx) => {
+      if (idx < 5) {
+        // YouTube動画検索用
+        if (idx === 0 || idx === 3) {
+          queries.push(`${issue} 解決方法 実践`);
+        }
+        // note記事/ウェブ記事検索用
+        if (idx === 1 || idx === 4) {
+          queries.push(`${issue} 対処法 note記事`);
+        }
+        // 書籍検索用
+        if (idx === 2) {
+          queries.push(`${issue} 改善方法 書籍`);
+        }
       }
     });
   }
-  if (condensedReport) {
-    queries.push(`${condensedReport.slice(0, 100)} 改善`);
-    queries.push(`${condensedReport.slice(0, 100)} ベストプラクティス`);
+
+  // 課題がない場合は日報から推測
+  if (queries.length === 0 && reportContent) {
+    const keywords = reportContent
+      .slice(0, 200)
+      .replace(/\n/g, ' ')
+      .split(/[。、\s]+/)
+      .filter(w => w.length > 3)
+      .slice(0, 3);
+    
+    keywords.forEach((keyword, idx) => {
+      if (idx === 0) queries.push(`${keyword} 解決方法`);
+      if (idx === 1) queries.push(`${keyword} 改善方法 note記事`);
+      if (idx === 2) queries.push(`${keyword} ベストプラクティス`);
+    });
+  }
+
+  // 5つに満たない場合は汎用的なクエリを追加
+  while (queries.length < 5) {
+    const genericQueries = [
+      '課題解決 実践方法',
+      '問題解決 ベストプラクティス',
+      'スキルアップ 方法',
+      '改善方法 note記事',
+      '課題解決 書籍'
+    ];
+    const genericQuery = genericQueries[queries.length % genericQueries.length];
+    if (!queries.includes(genericQuery)) {
+      queries.push(genericQuery);
+    } else {
+      break;
+    }
   }
 
   return Array.from(new Set(queries)).slice(0, 5);
@@ -381,12 +432,74 @@ async function evaluateAndSelectRecommendations(
       
       return result;
     }
-  } catch (error) {
+  } catch (error: any) {
+    // レート制限エラーの場合はフォールバックを使用
+    if (error?.message?.includes('Rate limit') || error?.status === 429) {
+      console.warn('OpenAI API rate limit reached, using fallback selection');
+      // 課題に関連するキーワードでフィルタリング
+      return selectRecommendationsByKeywords(issues, candidates);
+    }
     console.error('Failed to evaluate recommendations:', error);
   }
 
-  // エラー時はソースのバランスを考慮して5つを返す
-  const balanced = balanceSources(candidates);
+  // エラー時は課題に関連するキーワードでフィルタリング
+  return selectRecommendationsByKeywords(issues, candidates);
+}
+
+// 課題のキーワードを使ってリソースを選ぶ（AIを使わない）
+function selectRecommendationsByKeywords(
+  issues: Array<{ content: string; category?: string; severity?: string }>,
+  candidates: Recommendation[]
+): Recommendation[] {
+  if (candidates.length === 0) return [];
+  
+  // 課題からキーワードを抽出
+  const keywords = issues
+    .map(i => i.content)
+    .filter(Boolean)
+    .flatMap(content => {
+      // 課題の内容から重要な単語を抽出（3文字以上）
+      return content
+        .split(/[。、\s]+/)
+        .filter(w => w.length >= 3)
+        .slice(0, 5);
+    });
+
+  // キーワードに関連するリソースを優先的に選ぶ
+  const scored = candidates.map(candidate => {
+    let score = 0;
+    const text = `${candidate.title} ${candidate.description || ''}`.toLowerCase();
+    
+    keywords.forEach(keyword => {
+      const keywordLower = keyword.toLowerCase();
+      if (text.includes(keywordLower)) {
+        score += 10; // タイトルや説明に含まれている場合は高スコア
+      }
+    });
+    
+    // 重要度が高い課題に関連する場合は追加スコア
+    issues.forEach(issue => {
+      if (issue.severity === 'high' || issue.severity === 'critical') {
+        const issueLower = issue.content.toLowerCase();
+        if (text.includes(issueLower)) {
+          score += 5;
+        }
+      }
+    });
+    
+    return { candidate, score };
+  });
+
+  // スコア順にソート
+  scored.sort((a, b) => b.score - a.score);
+  
+  // 上位の候補を取得
+  const topCandidates = scored
+    .slice(0, 15)
+    .map(s => s.candidate);
+  
+  // ソースのバランスを考慮して5つ選ぶ
+  const balanced = balanceSources(topCandidates);
   return balanced.slice(0, 5);
 }
 
